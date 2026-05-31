@@ -1,0 +1,21 @@
+meta {
+  name: 05 enrolment check (used by exam-reg)
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://localhost:8082/api/enrollments/exists?studentId=1&courseId=1
+  body: none
+  auth: none
+}
+
+params:query {
+  studentId: 1
+  courseId: 1
+}
+
+docs {
+  This is the inter-service endpoint that exam-registration-service calls
+  during registration to verify the student is enrolled.
+}

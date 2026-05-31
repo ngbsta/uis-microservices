@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UIS — Register for Examination</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; background: #eef2f6; color: #1f2d3d; }
+    header { background: #4a7d2c; color: #fff; padding: 16px 28px; }
+    header h1 { margin: 0; font-size: 19px; }
+    header p { margin: 4px 0 0; opacity: .9; font-size: 13px; }
+    .wrap { max-width: 1180px; margin: 20px auto; padding: 0 16px; }
+    .modes { display:flex; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:20px; }
+    .modes button { flex:1; border:0; padding:14px; font-size:15px; font-weight:600; cursor:pointer; background:#dfe6ec; color:#5a6b7b; }
+    .modes button.active { background:#10739E; color:#fff; }
+    .bar { background:#fff; border-radius:8px; padding:12px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+    .bar label { font-size: 13px; color:#5a6b7b; }
+    .bar input { width: 90px; padding:7px 9px; border:1px solid #cdd7e1; border-radius:6px; }
+    .card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:20px; overflow:hidden; }
+    .card h2 { font-size:14px; margin:0; padding:11px 16px; color:#fff; }
+    .sec-reg h2  { background:#3a7a3a; } .sec-can h2 { background:#4a90a4; }
+    .sec-cant h2 { background:#b08a2e; } .sec-teach h2{ background:#10739E; } .sec-list h2 { background:#566573; }
+    table { width:100%; border-collapse:collapse; font-size:12.5px; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #eef2f6; vertical-align:top; }
+    th { color:#5a6b7b; font-weight:600; background:#f7f9fb; }
+    .dot { display:inline-block; width:11px; height:11px; border-radius:50%; }
+    .g { background:#37a24a; } .r { background:#d33; }
+    .btn { border:0; padding:6px 12px; border-radius:5px; font-size:13px; cursor:pointer; color:#fff; }
+    .btn.reg { background:#37a24a; } .btn.unreg { background:#c0392b; } .btn:hover { opacity:.9; }
+    .empty { padding:14px 16px; color:#94a3b3; font-size:13px; }
+    .teach-body { padding:14px 16px; }
+    .teach-body .row { display:flex; gap:10px; flex-wrap:wrap; } .teach-body .row > div { flex:1; min-width:120px; }
+    .teach-body label { display:block; font-size:12px; color:#5a6b7b; margin:6px 0 3px; }
+    .teach-body input, .teach-body select { width:100%; padding:7px 9px; border:1px solid #cdd7e1; border-radius:6px; }
+    .teach-body button { margin-top:12px; background:#10739E; color:#fff; border:0; padding:9px 15px; border-radius:6px; cursor:pointer; }
+    .msg { margin:10px 16px 14px; padding:9px 12px; border-radius:6px; font-size:13px; display:none; }
+    .msg.ok { background:#d6f5e0; color:#1c7a42; display:block; } .msg.err { background:#fde2e2; color:#b8312f; display:block; }
+    .reason { color:#b8312f; font-size:12px; } .win { font-size:11.5px; color:#566573; } .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mendel UIS — Register for examinations</h1>
+    <p>Exam registration microservice</p>
+  </header>
+
+  <div class="wrap">
+    <div class="modes">
+      <button id="m_student" class="active" onclick="setMode('student')">Student Mode</button>
+      <button id="m_teacher" onclick="setMode('teacher')">Teacher Mode</button>
+    </div>
+
+    <!-- STUDENT VIEW -->
+    <div id="studentView">
+      <div class="bar">
+        <label>Logged in as student ID:</label>
+        <input id="sid" type="number" value="1">
+        <button class="btn reg" onclick="loadStudent()">Load my exam sittings</button>
+        <span id="topmsg" style="font-size:13px;color:#5a6b7b;"></span>
+      </div>
+
+      <!-- UC-04: filter / restrict -->
+      <div class="bar">
+        <label>Filter — Course ID:</label>
+        <input id="f_course" type="number" placeholder="all" style="width:80px" oninput="renderStudent()">
+        <label>Type:</label>
+        <select id="f_type" onchange="renderStudent()" style="width:auto;padding:7px 9px;border:1px solid #cdd7e1;border-radius:6px;">
+          <option value="">All</option><option>Written</option><option>Oral</option>
+        </select>
+        <label>Sort:</label>
+        <select id="f_sort" onchange="renderStudent()" style="width:auto;padding:7px 9px;border:1px solid #cdd7e1;border-radius:6px;">
+          <option value="date">By date</option><option value="course">By course</option><option value="capacity">By free seats</option>
+        </select>
+        <button class="btn" style="background:#94a3b3" onclick="clearFilter()">Clear</button>
+      </div>
+
+      <div class="card sec-reg">
+        <h2>Which exam sittings I have registered for</h2>
+        <table><thead><tr><th></th><th>Course</th><th>Date of sitting</th><th>Room</th><th>Type</th><th>Registration window</th><th>Capacity</th><th>Action</th></tr></thead>
+          <tbody id="t_reg"></tbody></table>
+        <div id="e_reg" class="empty">— load to view —</div>
+      </div>
+
+      <div class="card sec-can">
+        <h2>Which exam sittings I can register for</h2>
+        <table><thead><tr><th></th><th>Course</th><th>Date of sitting</th><th>Room</th><th>Type</th><th>Registration window</th><th>Capacity</th><th>Register</th></tr></thead>
+          <tbody id="t_can"></tbody></table>
+        <div id="e_can" class="empty">— load to view —</div>
+        <div id="r_msg" class="msg"></div>
+      </div>
+
+      <div class="card sec-cant">
+        <h2>Which exam sittings I cannot register for</h2>
+        <table><thead><tr><th></th><th>Course</th><th>Date of sitting</th><th>Room</th><th>Type</th><th>Registration window</th><th>Capacity</th><th>Reason / Action</th></tr></thead>
+          <tbody id="t_cant"></tbody></table>
+        <div id="e_cant" class="empty">— load to view —</div>
+      </div>
+
+      <div class="card" style="border:1px solid #e0e0e0;">
+        <h2 style="background:#8a8f99;">Past exam dates</h2>
+        <table><thead><tr><th></th><th>Course</th><th>Date of sitting</th><th>Room</th><th>Type</th><th>Capacity</th></tr></thead>
+          <tbody id="t_past"></tbody></table>
+        <div id="e_past" class="empty">— load to view —</div>
+      </div>
+    </div>
+
+    <!-- TEACHER VIEW -->
+    <div id="teacherView" class="hidden">
+      <div class="card sec-teach">
+        <h2 id="teachTitle">Create / publish a new exam sitting</h2>
+        <div class="teach-body">
+          <div class="row">
+            <div><label>Course ID</label><input id="c_course" type="number" value="1"></div>
+            <div><label>Teacher ID</label><input id="c_teacher" type="number" value="1"></div>
+            <div><label>Room</label><input id="c_room" value="Q2.61"></div>
+            <div><label>Type</label><select id="c_type"><option>Written</option><option>Oral</option></select></div>
+            <div><label>Capacity</label><input id="c_capacity" type="number" value="30"></div>
+          </div>
+          <div class="row">
+            <div><label>Date of exam sitting</label><input id="c_date" type="datetime-local"></div>
+            <div><label>Registration from</label><input id="c_regfrom" type="datetime-local"></div>
+            <div><label>Registration until</label><input id="c_reguntil" type="datetime-local"></div>
+            <div><label>Unregister until</label><input id="c_unreg" type="datetime-local"></div>
+          </div>
+          <button id="saveBtn" onclick="saveSitting()">Create exam sitting</button>
+          <button id="cancelBtn" class="btn unreg hidden" style="margin-top:12px;margin-left:8px;" onclick="cancelEdit()">Cancel edit</button>
+          <div class="win" style="margin-top:8px;">Students can register <b>only between “Registration from” and “Registration until”.</b></div>
+          <div id="c_msg" class="msg"></div>
+        </div>
+      </div>
+
+      <div class="card sec-list">
+        <h2>All exam sittings <button style="float:right;margin:0;padding:5px 10px;font-size:12px;" class="btn reg" onclick="loadTeacher()">Refresh</button></h2>
+        <table><thead><tr><th>ID</th><th>Course</th><th>Date of sitting</th><th>Room</th><th>Type</th><th>Registration window</th><th>Capacity</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="t_all"></tbody></table>
+        <div id="e_all" class="empty">— load to view —</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const api = (path, opts) => fetch(path, opts).then(async r => {
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.message || ("HTTP " + r.status));
+  return body;
+});
+const show = (id, ok, t) => { const e=document.getElementById(id); e.className="msg "+(ok?"ok":"err"); e.textContent=t; };
+const fmt = dt => dt ? dt.slice(0,16).replace("T"," ") : "—";
+const win = s => fmt(s.registerFrom) + "  →  " + fmt(s.registerUntil);
+function fill(tb, em, rows){ document.getElementById(tb).innerHTML=rows.join(""); const e=document.getElementById(em); e.style.display=rows.length?"none":"block"; if(!rows.length) e.textContent="No exam sittings found."; }
+
+function pad(n){ return String(n).padStart(2,"0"); }
+function toLocal(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes()); }
+function prefillDates(){
+  const now=new Date();
+  const d=(days)=>{ const x=new Date(now); x.setDate(x.getDate()+days); return toLocal(x); };
+  document.getElementById("c_date").value    = d(20);
+  document.getElementById("c_regfrom").value = toLocal(now);
+  document.getElementById("c_reguntil").value= d(14);
+  document.getElementById("c_unreg").value   = d(18);
+}
+
+function setMode(mode){
+  const student = mode==="student";
+  document.getElementById("studentView").classList.toggle("hidden", !student);
+  document.getElementById("teacherView").classList.toggle("hidden", student);
+  document.getElementById("m_student").classList.toggle("active", student);
+  document.getElementById("m_teacher").classList.toggle("active", !student);
+  if (student) loadStudent(); else loadTeacher();
+}
+
+/* STUDENT */
+let stuSittings = [], stuRegBy = {}, stuMonitoring = {}, stuMonitorNotified = {};
+
+async function loadStudent(){
+  const sid=+document.getElementById("sid").value;
+  document.getElementById("topmsg").textContent="";
+  try {
+    stuSittings = await api("/api/sittings");
+    const regs = await api("/api/registrations?studentId="+sid);
+    stuRegBy = {}; regs.filter(r=>r.status==="REGISTERED").forEach(r=>stuRegBy[r.sittingId]=r);
+    const mons = await api("/api/monitors?studentId="+sid).catch(()=>[]);
+    stuMonitoring = {}; stuMonitorNotified = {}; mons.forEach(m=>{ stuMonitoring[m.sittingId]=m.id; stuMonitorNotified[m.sittingId]=m.notified; });
+  } catch(e){ document.getElementById("topmsg").textContent="Error: "+e.message; return; }
+  renderStudent();
+}
+
+function clearFilter(){ document.getElementById("f_course").value=""; document.getElementById("f_type").value=""; document.getElementById("f_sort").value="date"; renderStudent(); }
+
+// UC-04: client-side filter + UC-01 grouping + UC-07 vacancy monitoring
+function renderStudent(){
+  const fc = document.getElementById("f_course").value.trim();
+  const ft = document.getElementById("f_type").value;
+  const sort = document.getElementById("f_sort").value;
+  const now = new Date();
+  // UC-07: alert if a watched sitting has a freed place
+  const alerts = Object.values(stuMonitorNotified).filter(Boolean).length;
+  document.getElementById("topmsg").innerHTML = alerts
+    ? `<b style="color:#b8312f;">${alerts} place(s) opened in sitting(s) you are watching — register now!</b>` : "";
+  const R=[],C=[],N=[],P=[];
+  stuSittings
+    .filter(s => (!fc || s.courseId == +fc) && (!ft || s.type === ft))
+    .sort((a,b)=> sort==="course" ? a.courseId-b.courseId
+                : sort==="capacity" ? (b.capacity-b.registeredCount)-(a.capacity-a.registeredCount)
+                : new Date(a.date)-new Date(b.date))
+    .forEach(s=>{
+      const cap=s.registeredCount+"/"+s.capacity, c="course "+s.courseId, past = new Date(s.date) < now;
+      if (past) {
+        P.push(`<tr><td><span class="dot"></span></td><td>${c}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td><td>${cap}</td></tr>`);
+      } else if (stuRegBy[s.id]) {
+        R.push(`<tr><td><span class="dot g"></span></td><td>${c}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td><td class="win">${win(s)}</td><td>${cap}</td><td><button class="btn unreg" onclick="unreg(${stuRegBy[s.id].id})">Log out</button></td></tr>`);
+      } else if (s.registrationOpen && s.freeCapacity) {
+        C.push(`<tr><td><span class="dot g"></span></td><td>${c}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td><td class="win">${win(s)}</td><td>${cap}</td><td><button class="btn reg" onclick="reg(${s.id})">Register</button></td></tr>`);
+      } else {
+        let cell;
+        if (!s.registrationOpen) cell = `<span class="reason">outside registration window</span>`;
+        else if (stuMonitoring[s.id]) cell = `<span style="color:#2e8b57">monitoring — you'll be alerted</span>`;
+        else cell = `<span class="reason">capacity full</span> <button class="btn" style="background:#b08a2e" onclick="watch(${s.id})">Watch for a place</button>`;
+        N.push(`<tr><td><span class="dot r"></span></td><td>${c}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td><td class="win">${win(s)}</td><td>${cap}</td><td>${cell}</td></tr>`);
+      }
+    });
+  fill("t_reg","e_reg",R); fill("t_can","e_can",C); fill("t_cant","e_cant",N); fill("t_past","e_past",P);
+}
+
+async function reg(sittingId){
+  const sid=+document.getElementById("sid").value;
+  try { const dto=await api("/api/registrations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({studentId:sid,sittingId})}); show("r_msg",true,"Registered for sitting "+dto.sittingId+" (status "+dto.status+")."); loadStudent(); }
+  catch(e){ show("r_msg",false,"Error: "+e.message); }
+}
+async function unreg(regId){
+  try { const r=await fetch("/api/registrations/"+regId,{method:"DELETE"}); if(!r.ok&&r.status!==204){const b=await r.json().catch(()=>({}));throw new Error(b.message||("HTTP "+r.status));} loadStudent(); }
+  catch(e){ show("r_msg",false,"Error: "+e.message); }
+}
+// UC-07: watch a full sitting
+async function watch(sittingId){
+  const sid=+document.getElementById("sid").value;
+  try { await api("/api/monitors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({studentId:sid,sittingId})}); show("r_msg",true,"Now monitoring sitting "+sittingId+" — you'll be alerted when a place frees up."); loadStudent(); }
+  catch(e){ show("r_msg",false,"Error: "+e.message); }
+}
+
+/* TEACHER */
+let allSittings = [];
+let editingId = null;
+
+async function loadTeacher(){
+  try { allSittings = await api("/api/sittings"); } catch(e){ return; }
+  fill("t_all","e_all", allSittings.map(s=>`<tr>
+      <td>${s.id}</td><td>course ${s.courseId}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td>
+      <td class="win">${win(s)}</td><td>${s.registeredCount}/${s.capacity}</td>
+      <td><span class="dot ${s.registrationOpen?'g':'r'}"></span> ${s.registrationOpen?'OPEN':'CLOSED'}</td>
+      <td>
+        <button class="btn reg" style="background:#4a90a4" onclick="editSitting(${s.id})">Edit</button>
+        <button class="btn unreg" onclick="deleteSitting(${s.id})">Delete</button>
+      </td></tr>`));
+}
+
+function editSitting(id){
+  const s = allSittings.find(x => x.id === id);
+  if (!s) return;
+  c_course.value = s.courseId; c_teacher.value = s.teacherId; c_room.value = s.room;
+  c_type.value = s.type; c_capacity.value = s.capacity;
+  c_date.value = s.date ? s.date.slice(0,16) : "";
+  c_regfrom.value = s.registerFrom ? s.registerFrom.slice(0,16) : "";
+  c_reguntil.value = s.registerUntil ? s.registerUntil.slice(0,16) : "";
+  c_unreg.value = s.unregisterUntil ? s.unregisterUntil.slice(0,16) : "";
+  editingId = id;
+  document.getElementById("teachTitle").textContent = "Editing exam sitting #" + id;
+  document.getElementById("saveBtn").textContent = "Save changes";
+  document.getElementById("cancelBtn").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function cancelEdit(){
+  editingId = null;
+  document.getElementById("teachTitle").textContent = "Create / publish a new exam sitting";
+  document.getElementById("saveBtn").textContent = "Create exam sitting";
+  document.getElementById("cancelBtn").classList.add("hidden");
+  document.getElementById("c_msg").style.display = "none";
+  prefillDates();
+}
+
+async function saveSitting(){
+  const body={ courseId:+c_course.value, teacherId:+c_teacher.value, room:c_room.value, type:c_type.value, capacity:+c_capacity.value };
+  const map={c_date:"date",c_regfrom:"registerFrom",c_reguntil:"registerUntil",c_unreg:"unregisterUntil"};
+  for (const [el,key] of Object.entries(map)){ const v=document.getElementById(el).value; if(v) body[key]=v; }
+  const url = editingId ? "/api/sittings/"+editingId : "/api/sittings";
+  const method = editingId ? "PUT" : "POST";
+  try {
+    const dto = await api(url, {method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+    show("c_msg", true, (editingId ? "Exam sitting #"+dto.id+" updated." : "Exam sitting created (ID "+dto.id+").")
+       + " Registration: "+fmt(dto.registerFrom)+" to "+fmt(dto.registerUntil));
+    if (editingId) cancelEdit();
+    loadTeacher();
+  } catch(e){ show("c_msg", false, "Error: "+e.message); }
+}
+
+async function deleteSitting(id){
+  if (!confirm("Delete exam sitting #" + id + "? Its registrations will be removed too.")) return;
+  try {
+    const r = await fetch("/api/sittings/"+id, {method:"DELETE"});
+    if (!r.ok && r.status !== 204){ const b=await r.json().catch(()=>({})); throw new Error(b.message||("HTTP "+r.status)); }
+    show("c_msg", true, "Exam sitting #"+id+" deleted.");
+    if (editingId === id) cancelEdit();
+    loadTeacher();
+  } catch(e){ show("c_msg", false, "Error: "+e.message); }
+}
+
+prefillDates();
+loadStudent();
+</script>
+</body>
+</html>

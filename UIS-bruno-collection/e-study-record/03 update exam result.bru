@@ -1,0 +1,17 @@
+meta {
+  name: 03 update exam result
+  type: http
+  seq: 3
+}
+
+put {
+  url: http://localhost:8082/api/results/1?grade=C&attempt=2&credits=0
+  body: none
+  auth: none
+}
+
+params:query {
+  grade: C
+  attempt: 2
+  credits: 0
+}

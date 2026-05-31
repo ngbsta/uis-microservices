@@ -1,0 +1,21 @@
+meta {
+  name: 02 create sitting (teacher)
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8081/api/sittings
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "courseId": 1,
+    "teacherId": 1,
+    "room": "B305",
+    "type": "Written",
+    "capacity": 25
+  }
+}

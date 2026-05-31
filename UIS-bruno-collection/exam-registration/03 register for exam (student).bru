@@ -1,0 +1,23 @@
+meta {
+  name: 03 register for exam (student)
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8081/api/registrations
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "studentId": 1,
+    "sittingId": 1
+  }
+}
+
+docs {
+  This call internally asks e-study-record-service whether the student is
+  enrolled in the sitting's course before allowing the registration.
+}

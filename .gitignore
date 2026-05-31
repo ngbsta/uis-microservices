@@ -1,0 +1,16 @@
+# Maven / Java build output
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS / misc
+.DS_Store
+Thumbs.db
+*.log
+
+# Local env
+*.local

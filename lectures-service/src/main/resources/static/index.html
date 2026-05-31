@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UIS — My Lectures Sheet</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; background: #eef2f6; color: #1f2d3d; }
+    header { background: #1f8a8a; color: #fff; padding: 16px 28px; }
+    header h1 { margin: 0; font-size: 19px; } header p { margin: 4px 0 0; opacity: .9; font-size: 13px; }
+    .wrap { max-width: 1080px; margin: 20px auto; padding: 0 16px; }
+    .modes { display:flex; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:18px; }
+    .modes button { flex:1; border:0; padding:14px; font-size:15px; font-weight:600; cursor:pointer; background:#dfe6ec; color:#5a6b7b; }
+    .modes button.active { background:#1f8a8a; color:#fff; }
+    .bar { background:#fff; border-radius:8px; padding:12px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+    .bar label { font-size:13px; color:#5a6b7b; } .bar select { padding:7px 9px; border:1px solid #cdd7e1; border-radius:6px; min-width:180px; }
+    .card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:18px; overflow:hidden; }
+    .card h2 { font-size:14px; margin:0; padding:11px 16px; color:#fff; background:#1f8a8a; }
+    .card.t h2 { background:#566573; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; padding:8px 12px; border-bottom:1px solid #eef2f6; }
+    th { color:#5a6b7b; font-weight:600; background:#f7f9fb; }
+    .body { padding:14px 16px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; } .row > div { flex:1; min-width:90px; }
+    label.f { display:block; font-size:12px; color:#5a6b7b; margin:6px 0 3px; }
+    input, select.in { width:100%; padding:7px 9px; border:1px solid #cdd7e1; border-radius:6px; }
+    button.act { margin-top:12px; background:#1f8a8a; color:#fff; border:0; padding:9px 15px; border-radius:6px; cursor:pointer; }
+    .btn { border:0; padding:6px 12px; border-radius:5px; font-size:13px; cursor:pointer; color:#fff; background:#1f8a8a; }
+    .grade { font-weight:700; font-size:14px; color:#1f8a8a; }
+    .empty { padding:14px 16px; color:#94a3b3; font-size:13px; }
+    .msg { margin:10px 16px 14px; padding:9px 12px; border-radius:6px; font-size:13px; display:none; }
+    .msg.ok { background:#d6f5e0; color:#1c7a42; display:block; } .msg.err { background:#fde2e2; color:#b8312f; display:block; }
+    .hidden { display:none; } .kv { font-size:13px; line-height:1.7; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mendel UIS — My Lectures Sheet</h1>
+    <p>Lectures microservice · timetable, assessment sheets, test results, materials</p>
+  </header>
+
+  <div class="wrap">
+    <div class="modes">
+      <button id="m_student" class="active" onclick="setMode('student')">Student Mode</button>
+      <button id="m_teacher" onclick="setMode('teacher')">Teacher Mode</button>
+    </div>
+
+    <div class="bar">
+      <label>Student:</label>
+      <select id="sid" onchange="reload()">
+        <option value="1">Kutay Tanriverdi (#1)</option>
+        <option value="2">Myat Noe Khin (#2)</option>
+        <option value="3">Muhammad Umer Ijaz (#3)</option>
+      </select>
+      <label>Course:</label>
+      <select id="cid" onchange="reload()"></select>
+    </div>
+
+    <!-- STUDENT -->
+    <div id="studentView">
+      <div class="card"><h2>Course timetable (schedule &amp; attendance)</h2>
+        <div class="body kv" id="timetable">—</div></div>
+      <div class="card"><h2>My assessment sheet</h2>
+        <table><thead><tr><th>Course</th><th>Seminar</th><th>Activity</th><th>Paper</th><th>Overall grade</th></tr></thead><tbody id="t_sheet"></tbody></table>
+        <div id="e_sheet" class="empty">—</div></div>
+      <div class="card"><h2>My released test results</h2>
+        <table><thead><tr><th>Course</th><th>Score</th><th>Submitted</th></tr></thead><tbody id="t_test"></tbody></table>
+        <div id="e_test" class="empty">—</div></div>
+      <div class="card"><h2>Course folder &amp; materials</h2>
+        <div class="body kv" id="folder">—</div>
+        <table><thead><tr><th>Material</th><th>File</th><th>Uploaded</th></tr></thead><tbody id="t_mat"></tbody></table></div>
+      <div class="card"><h2>Email notifications</h2>
+        <div class="body" id="notif">—</div></div>
+    </div>
+
+    <!-- TEACHER -->
+    <div id="teacherView" class="hidden">
+      <div class="card t"><h2>Maintain assessment sheet (auto overall grade)</h2>
+        <div class="body">
+          <div class="row">
+            <div><label class="f">Course ID</label><input id="a_course" type="number" value="1"></div>
+            <div><label class="f">Student ID</label><input id="a_student" type="number" value="1"></div>
+            <div><label class="f">Seminar</label><input id="a_sem" type="number" value="25"></div>
+            <div><label class="f">Activity</label><input id="a_act" type="number" value="18"></div>
+            <div><label class="f">Paper</label><input id="a_pap" type="number" value="30"></div>
+          </div>
+          <button class="act" onclick="saveSheet()">Save assessment sheet</button>
+          <div id="a_msg" class="msg"></div>
+        </div></div>
+
+      <div class="card t"><h2>Test results</h2>
+        <div class="body">
+          <div class="row">
+            <div><label class="f">Course ID</label><input id="tr_course" type="number" value="1"></div>
+            <div><label class="f">Student ID</label><input id="tr_student" type="number" value="1"></div>
+            <div><label class="f">Score</label><input id="tr_score" type="number" value="80"></div>
+          </div>
+          <button class="act" onclick="createTest()">Add test result (unreleased)</button>
+          <div id="tr_msg" class="msg"></div>
+        </div>
+        <table><thead><tr><th>ID</th><th>Course</th><th>Student</th><th>Score</th><th>Released?</th><th>Action</th></tr></thead><tbody id="t_alltest"></tbody></table>
+        <div id="e_alltest" class="empty">—</div></div>
+
+      <div class="card t"><h2>Upload course document</h2>
+        <div class="body">
+          <div class="row">
+            <div><label class="f">Course ID</label><input id="u_course" type="number" value="1"></div>
+            <div><label class="f">Title</label><input id="u_title" value="Lecture 2 - Slides"></div>
+            <div><label class="f">File URL</label><input id="u_url" value="/files/dsa/lec2.pdf"></div>
+          </div>
+          <button class="act" onclick="uploadMat()">Upload document</button>
+          <div id="u_msg" class="msg"></div>
+        </div></div>
+    </div>
+  </div>
+
+<script>
+const api = (p,o) => fetch(p,o).then(async r => { const b = await r.json().catch(()=>({})); if(!r.ok) throw new Error(b.message||("HTTP "+r.status)); return b; });
+const show = (id,ok,t) => { const e=document.getElementById(id); e.className="msg "+(ok?"ok":"err"); e.textContent=t; };
+function fill(tb,em,rows){ document.getElementById(tb).innerHTML=rows.join(""); const e=document.getElementById(em); if(e){ e.style.display=rows.length?"none":"block"; if(!rows.length) e.textContent="No records."; } }
+
+async function loadCourses(){
+  const cs = await api("/api/courses");
+  document.getElementById("cid").innerHTML = cs.map(c=>`<option value="${c.id}">${c.name} (#${c.id})</option>`).join("");
+}
+
+function setMode(mode){
+  const student = mode==="student";
+  document.getElementById("studentView").classList.toggle("hidden", !student);
+  document.getElementById("teacherView").classList.toggle("hidden", student);
+  document.getElementById("m_student").classList.toggle("active", student);
+  document.getElementById("m_teacher").classList.toggle("active", !student);
+  reload();
+}
+
+async function reload(){
+  const sid = +document.getElementById("sid").value;
+  const cid = +document.getElementById("cid").value || 1;
+  const teacher = !document.getElementById("teacherView").classList.contains("hidden");
+  try {
+    if (!teacher) {
+      const tt = await api("/api/courses/"+cid+"/timetable").catch(()=>null);
+      document.getElementById("timetable").innerHTML = tt
+        ? `<b>Weekly slots:</b> ${tt.weeklySlots}<br><b>Attendance:</b> ${tt.attendanceLog}` : "No timetable for this course.";
+      const sheets = await api("/api/assessment-sheets?studentId="+sid);
+      fill("t_sheet","e_sheet", sheets.map(s=>`<tr><td>course ${s.courseId}</td><td>${s.seminarScore}</td><td>${s.activityScore}</td><td>${s.paperScore}</td><td class="grade">${s.overallGrade}</td></tr>`));
+      const tests = await api("/api/test-results?studentId="+sid);
+      fill("t_test","e_test", tests.map(t=>`<tr><td>course ${t.courseId}</td><td>${t.score}</td><td>${(t.submittedAt||'').slice(0,16).replace('T',' ')}</td></tr>`));
+      const folder = await api("/api/courses/"+cid+"/folder").catch(()=>null);
+      document.getElementById("folder").innerHTML = folder
+        ? `<b>Server path:</b> ${folder.serverPath}<br><b>Permissions:</b> ${folder.accessPermissions}` : "No folder.";
+      const mats = await api("/api/courses/"+cid+"/materials");
+      fill("t_mat",null, mats.map(m=>`<tr><td>${m.title}</td><td>${m.fileUrl}</td><td>${(m.uploadedAt||'').slice(0,16).replace('T',' ')}</td></tr>`));
+      const notifs = await api("/api/notifications?studentId="+sid);
+      const n = notifs.find(x=>x.courseId===cid) || notifs[0];
+      document.getElementById("notif").innerHTML = n
+        ? `Course ${n.courseId}: alerts <b>${n.enabled?'ON':'OFF'}</b> <button class="btn" onclick="toggleNotif(${sid},${n.courseId},${!n.enabled})">Turn ${n.enabled?'OFF':'ON'}</button>`
+        : `<button class="btn" onclick="toggleNotif(${sid},${cid},true)">Enable alerts for course ${cid}</button>`;
+    } else {
+      const tests = await api("/api/test-results?studentId="+ (+document.getElementById("tr_student").value || sid));
+      // teacher list shows all test results for the student in the form
+      fill("t_alltest","e_alltest", tests.map(t=>`<tr><td>${t.id}</td><td>course ${t.courseId}</td><td>student ${t.studentId}</td><td>${t.score}</td><td>${t.released?'YES':'no'}</td><td>${t.released?'':'<button class="btn" onclick="releaseTest('+t.id+')">Release</button>'}</td></tr>`));
+    }
+  } catch(e){ /* ignore per-widget */ }
+}
+
+/* student */
+async function toggleNotif(sid,cid,enabled){
+  try { await api(`/api/notifications?studentId=${sid}&courseId=${cid}&enabled=${enabled}`, {method:"PUT"}); reload(); } catch(e){}
+}
+
+/* teacher */
+async function saveSheet(){
+  const body={ courseId:+a_course.value, studentId:+a_student.value, seminarScore:+a_sem.value, activityScore:+a_act.value, paperScore:+a_pap.value };
+  try { const d=await api("/api/assessment-sheets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); show("a_msg",true,"Saved. Overall grade (auto): "+d.overallGrade); }
+  catch(e){ show("a_msg",false,"Error: "+e.message); }
+}
+async function createTest(){
+  const body={ courseId:+tr_course.value, studentId:+tr_student.value, score:+tr_score.value, released:false, submittedAt:new Date().toISOString().slice(0,19) };
+  try { const d=await api("/api/test-results",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); show("tr_msg",true,"Test result added (ID "+d.id+"), not released yet."); reload(); }
+  catch(e){ show("tr_msg",false,"Error: "+e.message); }
+}
+async function releaseTest(id){
+  try { await api("/api/test-results/"+id+"/release",{method:"PUT"}); reload(); } catch(e){}
+}
+async function uploadMat(){
+  const body={ courseId:+u_course.value, title:u_title.value, fileUrl:u_url.value, uploadedAt:new Date().toISOString().slice(0,19) };
+  try { const d=await api("/api/materials",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); show("u_msg",true,"Document uploaded (ID "+d.id+")."); reload(); }
+  catch(e){ show("u_msg",false,"Error: "+e.message); }
+}
+
+loadCourses().then(reload);
+</script>
+</body>
+</html>
