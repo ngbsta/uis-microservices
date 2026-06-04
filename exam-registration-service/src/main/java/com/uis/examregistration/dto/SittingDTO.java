@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class SittingDTO {
     private Long id;
     private Long courseId;
+    private String courseName;   // resolved from lectures-service (single source of truth)
     private Long teacherId;
     private LocalDateTime date;
     private String room;
@@ -21,6 +22,8 @@ public class SittingDTO {
     public void setId(Long id) { this.id = id; }
     public Long getCourseId() { return courseId; }
     public void setCourseId(Long courseId) { this.courseId = courseId; }
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
     public Long getTeacherId() { return teacherId; }
     public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
     public LocalDateTime getDate() { return date; }

@@ -2,7 +2,11 @@ package com.uis.lectures.domain;
 
 import jakarta.persistence.*;
 
-/** Umer's "My Lectures Sheet": per-student coursework email alert toggle. */
+/**
+ * Per-student, per-course e-mail notification setting — the "set send notifications"
+ * toggle shown at the right of each course row in the real Mendel UIS lectures sheet.
+ * Clicking it turns sending e-mails on/off for that course.
+ */
 @Entity
 @Table(name = "email_notification")
 public class EmailNotification {

@@ -13,7 +13,6 @@ public class ExamResultDTO {
     private String courseName;
     private Long sittingId;
     private String grade;
-    private int attempt;
     private int credits;
     private LocalDate date;
 
@@ -29,8 +28,6 @@ public class ExamResultDTO {
     public void setSittingId(Long sittingId) { this.sittingId = sittingId; }
     public String getGrade() { return grade; }
     public void setGrade(String grade) { this.grade = grade; }
-    public int getAttempt() { return attempt; }
-    public void setAttempt(int attempt) { this.attempt = attempt; }
     public int getCredits() { return credits; }
     public void setCredits(int credits) { this.credits = credits; }
     public LocalDate getDate() { return date; }

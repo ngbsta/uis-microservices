@@ -2,13 +2,11 @@ package com.uis.estudyrecord.bootstrap;
 
 import com.uis.estudyrecord.domain.Enrollment;
 import com.uis.estudyrecord.domain.ExamResult;
-import com.uis.estudyrecord.domain.Notification;
 import com.uis.estudyrecord.domain.Student;
 import com.uis.estudyrecord.domain.StudyPeriod;
 import com.uis.estudyrecord.repository.DatabaseConn;
 import com.uis.estudyrecord.repository.EnrollmentRepository;
 import com.uis.estudyrecord.repository.ExamResultRepository;
-import com.uis.estudyrecord.repository.NotificationRepository;
 import com.uis.estudyrecord.repository.StudentRepository;
 import com.uis.estudyrecord.repository.StudyPeriodRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -23,16 +21,13 @@ public class DataSeeder implements CommandLineRunner {
     private final StudyPeriodRepository periodRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ExamResultRepository resultRepository;
-    private final NotificationRepository notificationRepository;
 
     public DataSeeder(StudentRepository studentRepository, StudyPeriodRepository periodRepository,
-                      EnrollmentRepository enrollmentRepository, ExamResultRepository resultRepository,
-                      NotificationRepository notificationRepository) {
+                      EnrollmentRepository enrollmentRepository, ExamResultRepository resultRepository) {
         this.studentRepository = studentRepository;
         this.periodRepository = periodRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.resultRepository = resultRepository;
-        this.notificationRepository = notificationRepository;
     }
 
     @Override
@@ -64,13 +59,9 @@ public class DataSeeder implements CommandLineRunner {
                 enrollmentRepository.save(new Enrollment(st.getId(), courseId, 1L, "ACTIVE"));
                 // passing grade for every course (sittingId left null — these are recorded results)
                 resultRepository.save(new ExamResult(st.getId(), courseId, null,
-                        grades[si][ci], 1, credits[ci], LocalDate.of(2026, 1, 20 + ci)));
+                        grades[si][ci], credits[ci], LocalDate.of(2026, 1, 20 + ci)));
             }
         }
-
-        // sample notification for student 1 (Student 1 -- 0..* Notification)
-        notificationRepository.save(new Notification(s1.getId(),
-                "Your exam results have been published — all courses passed."));
 
         System.out.println(">>> e-study-record seeded: 3 students, all passing 5 courses. Singleton: "
                 + DatabaseConn.getInstance().getConn());

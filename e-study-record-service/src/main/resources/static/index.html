@@ -68,8 +68,6 @@
             <div><label class="f">Exam sitting ID (optional)</label><input id="g_sitting" type="number" placeholder="—"></div>
             <div><label class="f">Grade</label>
               <select id="g_grade"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></div>
-            <div><label class="f">Attempt</label><input id="g_attempt" type="number" value="1"></div>
-            <div><label class="f">Credits awarded</label><input id="g_credits" type="number" value="6"></div>
             <div><label class="f">Date</label><input id="g_date" type="date"></div>
           </div>
           <button class="act" id="saveBtn" onclick="saveResult()">Save result</button>
@@ -80,7 +78,7 @@
 
       <div class="card sec-list">
         <h2>This student's exam results</h2>
-        <table><thead><tr><th>Result ID</th><th>Class</th><th>Grade</th><th>Attempt</th><th>Credits</th><th>Date</th><th>Action</th></tr></thead>
+        <table><thead><tr><th>Result ID</th><th>Class</th><th>Grade</th><th>Credits</th><th>Date</th><th>Action</th></tr></thead>
           <tbody id="t_res"></tbody></table>
         <div id="e_res" class="empty">— load to view —</div>
       </div>
@@ -96,15 +94,9 @@
       </div>
       <div class="card sec-list">
         <h2>Exam history (past sittings)</h2>
-        <table><thead><tr><th>Result ID</th><th>Class</th><th>Grade</th><th>Attempt</th><th>Credits</th><th>Date</th></tr></thead>
+        <table><thead><tr><th>Result ID</th><th>Class</th><th>Grade</th><th>Credits</th><th>Date</th></tr></thead>
           <tbody id="t_hist"></tbody></table>
         <div id="e_hist" class="empty">— load to view —</div>
-      </div>
-      <div class="card sec-ov">
-        <h2>Notifications</h2>
-        <table><thead><tr><th></th><th>Message</th><th>When</th><th></th></tr></thead>
-          <tbody id="t_notif"></tbody></table>
-        <div id="e_notif" class="empty">— load to view —</div>
       </div>
     </div>
   </div>
@@ -159,31 +151,21 @@ async function reload(){
   if (!document.getElementById("teacherView").classList.contains("hidden")) {
     const results = await api("/api/results?studentId=" + sid);
     fill("t_res","e_res", results.map(r => `<tr>
-        <td>${r.id}</td><td>${r.courseName ?? ('Course '+r.courseId)}</td><td class="grade">${r.grade}</td><td>${r.attempt}</td><td>${r.credits}</td><td>${fmt(r.date)}</td>
+        <td>${r.id}</td><td>${r.courseName ?? ('Course '+r.courseId)}</td><td class="grade">${r.grade}</td><td>${r.credits}</td><td>${fmt(r.date)}</td>
         <td><button class="btn" onclick='editResult(${JSON.stringify(r)})'>Edit grade</button></td></tr>`));
   } else {
     const ov = await api("/api/students/" + sid + "/overview");
     document.getElementById("ov_credits").textContent = ov.totalCredits;
     document.getElementById("ov_exams").textContent = ov.examsTaken;
     fill("t_hist","e_hist", ov.examHistory.map(r => `<tr>
-        <td>${r.id}</td><td>${r.courseName ?? ('Course '+r.courseId)}</td><td class="grade">${r.grade}</td><td>${r.attempt}</td><td>${r.credits}</td><td>${fmt(r.date)}</td></tr>`));
-    const notifs = await api("/api/notifications?studentId=" + sid);
-    fill("t_notif","e_notif", notifs.map(n => `<tr>
-        <td>${n.read ? 'read' : 'new'}</td><td>${n.message}</td><td>${(n.createdAt||'').slice(0,16).replace('T',' ')}</td>
-        <td>${n.read ? '' : `<button class="btn" onclick="markNotif(${n.id})">Mark read</button>`}</td></tr>`));
+        <td>${r.id}</td><td>${r.courseName ?? ('Course '+r.courseId)}</td><td class="grade">${r.grade}</td><td>${r.credits}</td><td>${fmt(r.date)}</td></tr>`));
   }
-}
-
-async function markNotif(id){
-  try { await api("/api/notifications/" + id + "/read", { method:"PUT" }); reload(); } catch(e){}
 }
 
 function editResult(r){
   if (r.courseId) document.getElementById("g_course").value = r.courseId;
   document.getElementById("g_sitting").value = r.sittingId ?? "";
   document.getElementById("g_grade").value = r.grade;
-  document.getElementById("g_attempt").value = r.attempt;
-  document.getElementById("g_credits").value = r.credits;
   document.getElementById("g_date").value = r.date || "";
   editingId = r.id;
   document.getElementById("formTitle").textContent = "Update exam result #" + r.id;
@@ -202,18 +184,16 @@ function cancelEdit(){
 async function saveResult(){
   const sid = +document.getElementById("sid").value;
   const grade = document.getElementById("g_grade").value;
-  const attempt = +document.getElementById("g_attempt").value;
-  const credits = +document.getElementById("g_credits").value;
   try {
     if (editingId) {
-      const q = `?grade=${encodeURIComponent(grade)}&attempt=${attempt}&credits=${credits}`;
+      const q = `?grade=${encodeURIComponent(grade)}`;
       const dto = await api("/api/results/" + editingId + q, { method:"PUT" });
       show("g_msg", true, "Result #" + dto.id + " updated to grade " + dto.grade);
       cancelEdit();
     } else {
       const body = { studentId: sid, courseId: +document.getElementById("g_course").value || null,
         sittingId: +document.getElementById("g_sitting").value || null,
-        grade, attempt, credits, date: document.getElementById("g_date").value || null };
+        grade, date: document.getElementById("g_date").value || null };
       const dto = await api("/api/results", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
       show("g_msg", true, "Grade saved: " + dto.grade + " (result ID " + dto.id + ")");
     }

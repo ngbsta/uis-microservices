@@ -13,19 +13,17 @@ public class ExamResult {
     private Long courseId;
     private Long sittingId;
     private String grade;
-    private int attempt;
     private int credits;
     private LocalDate date;
 
     public ExamResult() {
     }
 
-    public ExamResult(Long studentId, Long courseId, Long sittingId, String grade, int attempt, int credits, LocalDate date) {
+    public ExamResult(Long studentId, Long courseId, Long sittingId, String grade, int credits, LocalDate date) {
         this.studentId = studentId;
         this.courseId = courseId;
         this.sittingId = sittingId;
         this.grade = grade;
-        this.attempt = attempt;
         this.credits = credits;
         this.date = date;
     }
@@ -40,8 +38,6 @@ public class ExamResult {
     public void setSittingId(Long sittingId) { this.sittingId = sittingId; }
     public String getGrade() { return grade; }
     public void setGrade(String grade) { this.grade = grade; }
-    public int getAttempt() { return attempt; }
-    public void setAttempt(int attempt) { this.attempt = attempt; }
     public int getCredits() { return credits; }
     public void setCredits(int credits) { this.credits = credits; }
     public LocalDate getDate() { return date; }

@@ -2,7 +2,6 @@ package com.uis.estudyrecord.controller;
 
 import com.uis.estudyrecord.domain.Enrollment;
 import com.uis.estudyrecord.domain.ExamResult;
-import com.uis.estudyrecord.domain.Notification;
 import com.uis.estudyrecord.domain.Student;
 import com.uis.estudyrecord.dto.CourseDTO;
 import com.uis.estudyrecord.dto.EnrollmentStatusDTO;
@@ -23,17 +22,6 @@ public class StudyRecordController {
 
     public StudyRecordController(StudyRecordService service) {
         this.service = service;
-    }
-
-    // Notifications (Student 1 -- 0..* Notification)
-    @GetMapping("/notifications")
-    public List<Notification> getNotifications(@RequestParam Long studentId) {
-        return service.getNotifications(studentId);
-    }
-
-    @PutMapping("/notifications/{id}/read")
-    public Notification markRead(@PathVariable Long id) {
-        return service.markNotificationRead(id);
     }
 
     // Search & select a student
@@ -98,12 +86,10 @@ public class StudyRecordController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.addResult(result));
     }
 
-    // Teacher: enter / update exam result (grade, credits awarded)
+    // Teacher: enter / update exam result (grade only). Credits fixed per course; the sitting is the attempt.
     @PutMapping("/results/{id}")
     public ExamResult updateResult(@PathVariable Long id,
-                                   @RequestParam String grade,
-                                   @RequestParam int attempt,
-                                   @RequestParam int credits) {
-        return service.updateResult(id, grade, attempt, credits);
+                                   @RequestParam String grade) {
+        return service.updateResult(id, grade);
     }
 }

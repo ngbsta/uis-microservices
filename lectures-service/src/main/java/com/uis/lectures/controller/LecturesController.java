@@ -2,6 +2,8 @@ package com.uis.lectures.controller;
 
 import com.uis.lectures.domain.*;
 import com.uis.lectures.dto.ExamSittingDTO;
+import com.uis.lectures.dto.StudentDTO;
+import com.uis.lectures.dto.TestResultDTO;
 import com.uis.lectures.service.LecturesService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +38,10 @@ public class LecturesController {
     @GetMapping("/teachers")
     public List<Teacher> getTeachers() { return service.getTeachers(); }
 
+    // Inter-service: student list, fetched from e-study-record-service
+    @GetMapping("/students")
+    public List<StudentDTO> getStudents() { return service.getStudents(); }
+
     // Admin: reassign course teacher
     @PutMapping("/courses/{id}/teacher")
     public Course reassignTeacher(@PathVariable Long id, @RequestParam Long teacherId) {
@@ -58,29 +64,30 @@ public class LecturesController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.uploadMaterial(material));
     }
 
-    // ---- Assessment sheets ----
-    @GetMapping("/assessment-sheets")
-    public List<AssessmentSheet> getAssessmentSheets(@RequestParam Long studentId) {
-        return service.getAssessmentSheetsByStudent(studentId);
+    // ---- Attendance (weekly present/absent — the core of My Lectures Sheet) ----
+    @GetMapping("/courses/{id}/attendance")
+    public List<Attendance> getAttendance(@PathVariable Long id, @RequestParam Long studentId) {
+        return service.getAttendance(studentId, id);
     }
 
-    @PostMapping("/assessment-sheets")
-    public ResponseEntity<AssessmentSheet> createSheet(@RequestBody AssessmentSheet sheet) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveAssessmentSheet(sheet));
+    // All courses' attendance for a student (used by the per-course matrix view)
+    @GetMapping("/attendance")
+    public List<Attendance> getAttendanceByStudent(@RequestParam Long studentId) {
+        return service.getAttendanceByStudent(studentId);
     }
 
-    @PutMapping("/assessment-sheets/{id}/scores")
-    public AssessmentSheet updateScores(@PathVariable Long id,
-                                        @RequestParam double seminar,
-                                        @RequestParam double activity,
-                                        @RequestParam double paper) {
-        return service.updateScores(id, seminar, activity, paper);
+    @PostMapping("/attendance")
+    public ResponseEntity<Attendance> markAttendance(@RequestBody Attendance attendance) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.markAttendance(attendance));
     }
 
-    // ---- Test results ----
+    // ---- Mid-term test results ----
     @GetMapping("/test-results")
-    public List<TestResult> getTestResults(@RequestParam Long studentId) {
-        return service.getReleasedTestResults(studentId);
+    public List<TestResultDTO> getTestResults(@RequestParam Long studentId,
+                                              @RequestParam(required = false) Long courseId) {
+        return courseId == null
+                ? service.getReleasedTestResults(studentId)
+                : service.getReleasedTestResults(studentId, courseId);
     }
 
     @PostMapping("/test-results")
@@ -88,12 +95,7 @@ public class LecturesController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.saveTestResult(result));
     }
 
-    @PutMapping("/test-results/{id}/release")
-    public TestResult releaseTestResult(@PathVariable Long id) {
-        return service.releaseTestResult(id);
-    }
-
-    // ---- Email notifications ----
+    // ---- Email notifications: per-course "set send notifications" toggle ----
     @GetMapping("/notifications")
     public List<EmailNotification> getNotifications(@RequestParam Long studentId) {
         return service.getNotifications(studentId);

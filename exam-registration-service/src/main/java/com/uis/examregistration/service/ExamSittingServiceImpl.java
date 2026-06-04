@@ -1,5 +1,6 @@
 package com.uis.examregistration.service;
 
+import com.uis.examregistration.client.LecturesClient;
 import com.uis.examregistration.domain.ExamSitting;
 import com.uis.examregistration.dto.SittingDTO;
 import com.uis.examregistration.dto.SittingRequest;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -20,23 +22,36 @@ public class ExamSittingServiceImpl implements ExamSittingService {
     private final ExamSittingRepository sittingRepository;
     private final ExamRegistrationRepository registrationRepository;
     private final DtoMapper mapper;
+    private final LecturesClient lecturesClient;
 
     public ExamSittingServiceImpl(ExamSittingRepository sittingRepository,
                                   ExamRegistrationRepository registrationRepository,
-                                  DtoMapper mapper) {
+                                  DtoMapper mapper,
+                                  LecturesClient lecturesClient) {
         this.sittingRepository = sittingRepository;
         this.registrationRepository = registrationRepository;
         this.mapper = mapper;
+        this.lecturesClient = lecturesClient;
+    }
+
+    /** Attach the course name (resolved from lectures-service) to a DTO. */
+    private SittingDTO withCourseName(SittingDTO dto, Map<Long, String> names) {
+        dto.setCourseName(names.get(dto.getCourseId()));
+        return dto;
     }
 
     @Override
     public List<SittingDTO> getAll() {
-        return sittingRepository.findAll().stream().map(mapper::toDto).toList();
+        Map<Long, String> names = lecturesClient.courseNames();   // one inter-service call
+        return sittingRepository.findAll().stream()
+                .map(mapper::toDto)
+                .map(d -> withCourseName(d, names))
+                .toList();
     }
 
     @Override
     public SittingDTO getById(Long id) {
-        return mapper.toDto(find(id));
+        return withCourseName(mapper.toDto(find(id)), lecturesClient.courseNames());
     }
 
     /** Teacher: create / publish a new exam sitting. Dates default to an open window. */
@@ -51,7 +66,7 @@ public class ExamSittingServiceImpl implements ExamSittingService {
                 req.getUnregisterUntil() != null ? req.getUnregisterUntil() : now.plusDays(18),
                 req.getCourseId(), req.getTeacherId());
         validate(s);
-        return mapper.toDto(sittingRepository.save(s));
+        return withCourseName(mapper.toDto(sittingRepository.save(s)), lecturesClient.courseNames());
     }
 
     /** UC-06a: reject invalid input (capacity, wrong date order). */
@@ -83,7 +98,7 @@ public class ExamSittingServiceImpl implements ExamSittingService {
         if (req.getRegisterUntil() != null) s.setRegisterUntil(req.getRegisterUntil());
         if (req.getUnregisterUntil() != null) s.setUnregisterUntil(req.getUnregisterUntil());
         validate(s);
-        return mapper.toDto(sittingRepository.save(s));
+        return withCourseName(mapper.toDto(sittingRepository.save(s)), lecturesClient.courseNames());
     }
 
     /** Teacher: delete an exam sitting (its registrations are removed first). */

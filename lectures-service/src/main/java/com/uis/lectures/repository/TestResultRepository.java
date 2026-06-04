@@ -8,4 +8,5 @@ import java.util.List;
 public interface TestResultRepository extends JpaRepository<TestResult, Long> {
     List<TestResult> findByStudentId(Long studentId);
     List<TestResult> findByStudentIdAndReleasedTrue(Long studentId);
+    List<TestResult> findByStudentIdAndCourseIdAndReleasedTrue(Long studentId, Long courseId);
 }

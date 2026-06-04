@@ -13,16 +13,13 @@ public class Timetable {
 
     @Column(length = 2000)
     private String weeklySlots;     // e.g. "Mon 09:00-11:00 Q01; Wed 13:00-15:00 Q02"
-    @Column(length = 2000)
-    private String attendanceLog;   // e.g. "2026-03-02: present; 2026-03-09: absent"
 
     public Timetable() {
     }
 
-    public Timetable(Long courseId, String weeklySlots, String attendanceLog) {
+    public Timetable(Long courseId, String weeklySlots) {
         this.courseId = courseId;
         this.weeklySlots = weeklySlots;
-        this.attendanceLog = attendanceLog;
     }
 
     public Long getId() { return id; }
@@ -31,6 +28,4 @@ public class Timetable {
     public void setCourseId(Long courseId) { this.courseId = courseId; }
     public String getWeeklySlots() { return weeklySlots; }
     public void setWeeklySlots(String weeklySlots) { this.weeklySlots = weeklySlots; }
-    public String getAttendanceLog() { return attendanceLog; }
-    public void setAttendanceLog(String attendanceLog) { this.attendanceLog = attendanceLog; }
 }

@@ -3,14 +3,12 @@ package com.uis.estudyrecord.service;
 import com.uis.estudyrecord.client.LecturesClient;
 import com.uis.estudyrecord.domain.Enrollment;
 import com.uis.estudyrecord.domain.ExamResult;
-import com.uis.estudyrecord.domain.Notification;
 import com.uis.estudyrecord.domain.Student;
 import com.uis.estudyrecord.dto.CourseDTO;
 import com.uis.estudyrecord.dto.ExamResultDTO;
 import com.uis.estudyrecord.exception.NotFoundException;
 import com.uis.estudyrecord.repository.EnrollmentRepository;
 import com.uis.estudyrecord.repository.ExamResultRepository;
-import com.uis.estudyrecord.repository.NotificationRepository;
 import com.uis.estudyrecord.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,18 +24,15 @@ public class StudyRecordService {
     private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ExamResultRepository resultRepository;
-    private final NotificationRepository notificationRepository;
     private final LecturesClient lecturesClient;
 
     public StudyRecordService(StudentRepository studentRepository,
                               EnrollmentRepository enrollmentRepository,
                               ExamResultRepository resultRepository,
-                              NotificationRepository notificationRepository,
                               LecturesClient lecturesClient) {
         this.studentRepository = studentRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.resultRepository = resultRepository;
-        this.notificationRepository = notificationRepository;
         this.lecturesClient = lecturesClient;
     }
 
@@ -56,7 +51,6 @@ public class StudyRecordService {
                 : courseNames.getOrDefault(r.getCourseId(), "Course " + r.getCourseId()));
         dto.setSittingId(r.getSittingId());
         dto.setGrade(r.getGrade());
-        dto.setAttempt(r.getAttempt());
         dto.setCredits(r.getCredits());
         dto.setDate(r.getDate());
         return dto;
@@ -65,18 +59,6 @@ public class StudyRecordService {
     private List<ExamResultDTO> toDtos(List<ExamResult> results) {
         Map<Long, String> courseNames = lecturesClient.courseNames();
         return results.stream().map(r -> toDto(r, courseNames)).toList();
-    }
-
-    // ---- Notifications (Notification class; Student 1 -- 0..* Notification) ----
-    public List<Notification> getNotifications(Long studentId) {
-        return notificationRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
-    }
-
-    public Notification markNotificationRead(Long id) {
-        Notification n = notificationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Notification not found: " + id));
-        n.markAsRead();
-        return notificationRepository.save(n);
     }
 
     // ---- Students (search & select) ----
@@ -109,26 +91,25 @@ public class StudyRecordService {
         return toDtos(resultRepository.findByStudentId(studentId));
     }
 
-    /** Teacher: enter a new exam result. Notifies the student (BPMN "Notify Student Results"). */
-    public ExamResult addResult(ExamResult result) {
-        ExamResult saved = resultRepository.save(result);
-        notificationRepository.save(new Notification(saved.getStudentId(),
-                "Your exam result has been published: grade " + saved.getGrade()
-                        + " (" + saved.getCredits() + " credits)."));
-        return saved;
+    /** Credits are FIXED per course (owned by lectures-service), not set by the teacher. */
+    private int creditsForCourse(Long courseId) {
+        Integer credits = lecturesClient.courseCredits().get(courseId);
+        return credits != null ? credits : 0;
     }
 
-    /** Teacher: update an exam result (grade, credits awarded). Notifies the student. */
-    public ExamResult updateResult(Long id, String grade, int attempt, int credits) {
+    /** Teacher: enter a new exam result. Credits are taken from the course automatically. */
+    public ExamResult addResult(ExamResult result) {
+        result.setCredits(creditsForCourse(result.getCourseId()));
+        return resultRepository.save(result);
+    }
+
+    /** Teacher: update an exam result (grade only). Credits stay fixed to the course. */
+    public ExamResult updateResult(Long id, String grade) {
         ExamResult r = resultRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Result not found: " + id));
         r.setGrade(grade);
-        r.setAttempt(attempt);
-        r.setCredits(credits);
-        ExamResult saved = resultRepository.save(r);
-        notificationRepository.save(new Notification(saved.getStudentId(),
-                "Your exam result has been updated: grade " + saved.getGrade() + "."));
-        return saved;
+        r.setCredits(creditsForCourse(r.getCourseId()));
+        return resultRepository.save(r);
     }
 
     /** Student: track credits obtained (sum over results). */

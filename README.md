@@ -48,8 +48,8 @@ cd e-study-record-service      &&  mvn spring-boot:run     # port 8082
 cd lectures-service            &&  mvn spring-boot:run     # port 8083
 ```
 Each service seeds consistent demo data on first start:
-- **5 courses** (ids 1–5): Business Economics 2, Neural Networks, Software and Architecture,
-  Software and Deployment, Text Mining.
+- **5 courses** (ids 1–5): Business Economics 2, Neural Networks, Software and Services Architectures,
+  Software and Services Deployment, Text Mining.
 - Students: Kutay Tanriverdi (#1), Myat Noe Khin (#2), Muhammad Umer Ijaz (#3) — **all enrolled
   in all 5 courses and passing each with a grade**.
 - One open exam sitting per course + course timetable, assessment sheet, materials, etc.

@@ -52,4 +52,13 @@ public class LecturesClient {
         }
         return map;
     }
+
+    /** Convenience: courseId -> fixed course credits map (credits are owned by the course). */
+    public Map<Long, Integer> courseCredits() {
+        Map<Long, Integer> map = new LinkedHashMap<>();
+        for (CourseDTO c : getCourses()) {
+            map.put(c.getId(), c.getCredits());
+        }
+        return map;
+    }
 }

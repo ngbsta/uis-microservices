@@ -37,7 +37,7 @@
 <body>
   <header>
     <h1>Mendel UIS — My Lectures Sheet</h1>
-    <p>Lectures microservice · timetable, assessment sheets, test results, materials</p>
+    <p>Lectures microservice · timetable, attendance, mid-term test results, materials</p>
   </header>
 
   <div class="wrap">
@@ -46,66 +46,57 @@
       <button id="m_teacher" onclick="setMode('teacher')">Teacher Mode</button>
     </div>
 
-    <div class="bar">
+    <div class="bar" id="topbar">
       <label>Student:</label>
-      <select id="sid" onchange="reload()">
-        <option value="1">Kutay Tanriverdi (#1)</option>
-        <option value="2">Myat Noe Khin (#2)</option>
-        <option value="3">Muhammad Umer Ijaz (#3)</option>
-      </select>
-      <label>Course:</label>
-      <select id="cid" onchange="reload()"></select>
+      <select id="sid" onchange="reload()"></select>
     </div>
 
     <!-- STUDENT -->
     <div id="studentView">
-      <div class="card"><h2>Course timetable (schedule &amp; attendance)</h2>
-        <div class="body kv" id="timetable">—</div></div>
-      <div class="card"><h2>My assessment sheet</h2>
-        <table><thead><tr><th>Course</th><th>Seminar</th><th>Activity</th><th>Paper</th><th>Overall grade</th></tr></thead><tbody id="t_sheet"></tbody></table>
-        <div id="e_sheet" class="empty">—</div></div>
-      <div class="card"><h2>My released test results</h2>
-        <table><thead><tr><th>Course</th><th>Score</th><th>Submitted</th></tr></thead><tbody id="t_test"></tbody></table>
-        <div id="e_test" class="empty">—</div></div>
-      <div class="card"><h2>Course folder &amp; materials</h2>
+      <div class="card"><h2>My lectures sheet — schedule &amp; attendance (per course, by week)</h2>
+        <div class="body" id="attendance" style="overflow-x:auto">—</div></div>
+      <div class="card hidden" id="testCard"><h2>Mid-term test result (this course)</h2>
+        <table><thead><tr><th>Course</th><th>Mid-term score</th><th>Activity point</th><th>Submitted</th></tr></thead><tbody id="t_test"></tbody></table>
+        <div id="e_test" class="empty">—</div>
+        <div class="body" style="font-size:12px;color:#94a3b3;padding-top:0">These are partial / mid-term scores. The final exam grade &amp; credits are in the <b>E-Study Record</b> service (port 8082).</div></div>
+      <div class="card hidden" id="materialsCard"><h2>Course folder &amp; materials</h2>
         <div class="body kv" id="folder">—</div>
         <table><thead><tr><th>Material</th><th>File</th><th>Uploaded</th></tr></thead><tbody id="t_mat"></tbody></table></div>
-      <div class="card"><h2>Email notifications</h2>
-        <div class="body" id="notif">—</div></div>
     </div>
 
     <!-- TEACHER -->
     <div id="teacherView" class="hidden">
-      <div class="card t"><h2>Maintain assessment sheet (auto overall grade)</h2>
+      <div class="card t"><h2>Mark attendance</h2>
         <div class="body">
           <div class="row">
-            <div><label class="f">Course ID</label><input id="a_course" type="number" value="1"></div>
-            <div><label class="f">Student ID</label><input id="a_student" type="number" value="1"></div>
-            <div><label class="f">Seminar</label><input id="a_sem" type="number" value="25"></div>
-            <div><label class="f">Activity</label><input id="a_act" type="number" value="18"></div>
-            <div><label class="f">Paper</label><input id="a_pap" type="number" value="30"></div>
+            <div><label class="f">Course</label><select id="at_course" class="in"></select></div>
+            <div><label class="f">Student</label><select id="at_student" class="in"></select></div>
+            <div><label class="f">Week (1–12)</label><input id="at_week" type="number" min="1" max="12" value="12"></div>
+            <div><label class="f">Status</label>
+              <select id="at_status" class="in"><option>present</option><option>absent</option><option>excused</option></select></div>
           </div>
-          <button class="act" onclick="saveSheet()">Save assessment sheet</button>
-          <div id="a_msg" class="msg"></div>
+          <button class="act" onclick="markAtt()">Save attendance</button>
+          <div id="at_msg" class="msg"></div>
         </div></div>
 
-      <div class="card t"><h2>Test results</h2>
+      <div class="card t"><h2>Mid-term test results</h2>
         <div class="body">
           <div class="row">
-            <div><label class="f">Course ID</label><input id="tr_course" type="number" value="1"></div>
-            <div><label class="f">Student ID</label><input id="tr_student" type="number" value="1"></div>
-            <div><label class="f">Score</label><input id="tr_score" type="number" value="80"></div>
+            <div><label class="f">Course</label><select id="tr_course" class="in"></select></div>
+            <div><label class="f">Student</label><select id="tr_student" class="in" onchange="reload()"></select></div>
+            <div><label class="f">Mid-term score</label><input id="tr_score" type="number" value="80"></div>
+            <div><label class="f">Activity point</label><input id="tr_act" type="number" value="7"></div>
           </div>
-          <button class="act" onclick="createTest()">Add test result (unreleased)</button>
+          <button class="act" onclick="createTest()">Add test result</button>
           <div id="tr_msg" class="msg"></div>
         </div>
-        <table><thead><tr><th>ID</th><th>Course</th><th>Student</th><th>Score</th><th>Released?</th><th>Action</th></tr></thead><tbody id="t_alltest"></tbody></table>
+        <table><thead><tr><th>ID</th><th>Course</th><th>Student</th><th>Score</th></tr></thead><tbody id="t_alltest"></tbody></table>
         <div id="e_alltest" class="empty">—</div></div>
 
       <div class="card t"><h2>Upload course document</h2>
         <div class="body">
           <div class="row">
-            <div><label class="f">Course ID</label><input id="u_course" type="number" value="1"></div>
+            <div><label class="f">Course</label><select id="u_course" class="in"></select></div>
             <div><label class="f">Title</label><input id="u_title" value="Lecture 2 - Slides"></div>
             <div><label class="f">File URL</label><input id="u_url" value="/files/dsa/lec2.pdf"></div>
           </div>
@@ -123,14 +114,34 @@ function fill(tb,em,rows){ document.getElementById(tb).innerHTML=rows.join(""); 
 let courseNames = {};
 const cname = id => courseNames[id] || ("Course "+id);
 
+function fillSelect(id, options){
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = options.map(o=>`<option value="${o.value}">${o.text}</option>`).join("");
+}
+
 async function loadCourses(){
   const cs = await api("/api/courses");
   courseNames = {}; cs.forEach(c=>courseNames[c.id]=c.name);
-  document.getElementById("cid").innerHTML = cs.map(c=>`<option value="${c.id}">${c.name} (#${c.id})</option>`).join("");
+  const courseOpts = cs.map(c=>({ value:c.id, text:c.name }));
+  // top course filter (keep the #id hint there)
+  // teacher forms: course by NAME (not id)
+  fillSelect("at_course", courseOpts);
+  fillSelect("tr_course", courseOpts);
+  fillSelect("u_course",  courseOpts);
+}
+
+// Students come from e-study-record (via this service's /api/students proxy) — no hardcoding.
+async function loadStudents(){
+  const students = await api("/api/students").catch(()=>[]);
+  const opts = students.map(s=>({ value:s.id, text:s.name + " (#" + s.id + ")" }));
+  fillSelect("sid", opts);          // top student selector
+  fillSelect("at_student", opts);   // mark-attendance form
+  fillSelect("tr_student", opts);   // test-results form
 }
 
 function setMode(mode){
   const student = mode==="student";
+  document.getElementById("topbar").classList.toggle("hidden", !student);
   document.getElementById("studentView").classList.toggle("hidden", !student);
   document.getElementById("teacherView").classList.toggle("hidden", student);
   document.getElementById("m_student").classList.toggle("active", student);
@@ -140,53 +151,113 @@ function setMode(mode){
 
 async function reload(){
   const sid = +document.getElementById("sid").value;
-  const cid = +document.getElementById("cid").value || 1;
   const teacher = !document.getElementById("teacherView").classList.contains("hidden");
+  // Materials and test-result cards stay hidden until the student clicks a course's button.
+  document.getElementById("materialsCard").classList.add("hidden");
+  document.getElementById("testCard").classList.add("hidden");
   try {
     if (!teacher) {
-      const tt = await api("/api/courses/"+cid+"/timetable").catch(()=>null);
-      document.getElementById("timetable").innerHTML = tt
-        ? `<b>Weekly slots:</b> ${tt.weeklySlots}<br><b>Attendance:</b> ${tt.attendanceLog}` : "No timetable for this course.";
-      const sheets = await api("/api/assessment-sheets?studentId="+sid);
-      fill("t_sheet","e_sheet", sheets.map(s=>`<tr><td>${cname(s.courseId)}</td><td>${s.seminarScore}</td><td>${s.activityScore}</td><td>${s.paperScore}</td><td class="grade">${s.overallGrade}</td></tr>`));
-      const tests = await api("/api/test-results?studentId="+sid);
-      fill("t_test","e_test", tests.map(t=>`<tr><td>${cname(t.courseId)}</td><td>${t.score}</td><td>${(t.submittedAt||'').slice(0,16).replace('T',' ')}</td></tr>`));
-      const folder = await api("/api/courses/"+cid+"/folder").catch(()=>null);
-      document.getElementById("folder").innerHTML = folder
-        ? `<b>Server path:</b> ${folder.serverPath}<br><b>Permissions:</b> ${folder.accessPermissions}` : "No folder.";
-      const mats = await api("/api/courses/"+cid+"/materials");
-      fill("t_mat",null, mats.map(m=>`<tr><td>${m.title}</td><td>${m.fileUrl}</td><td>${(m.uploadedAt||'').slice(0,16).replace('T',' ')}</td></tr>`));
-      const notifs = await api("/api/notifications?studentId="+sid);
-      const n = notifs.find(x=>x.courseId===cid) || notifs[0];
-      document.getElementById("notif").innerHTML = n
-        ? `${cname(n.courseId)}: alerts <b>${n.enabled?'ON':'OFF'}</b> <button class="btn" onclick="toggleNotif(${sid},${n.courseId},${!n.enabled})">Turn ${n.enabled?'OFF':'ON'}</button>`
-        : `<button class="btn" onclick="toggleNotif(${sid},${cid},true)">Enable alerts for ${cname(cid)}</button>`;
+      // Attendance MATRIX — like the real UIS sheet: one row per course,
+      // a "When" (schedule) column, then weeks as columns.
+      const courses = await api("/api/courses");
+      const att = await api("/api/attendance?studentId="+sid).catch(()=>[]);
+      const notifs = await api("/api/notifications?studentId="+sid).catch(()=>[]);
+      const notifOn = {}; notifs.forEach(n=>{ notifOn[n.courseId] = n.enabled; });
+      const sched = {};
+      await Promise.all(courses.map(async c=>{
+        const tt = await api("/api/courses/"+c.id+"/timetable").catch(()=>null);
+        sched[c.id] = (tt && tt.weeklySlots) ? tt.weeklySlots : "—";
+      }));
+      const maxWeek = 12;   // a semester has exactly 12 teaching weeks
+      const byCourse = {};
+      att.forEach(a=>{ (byCourse[a.courseId] = byCourse[a.courseId] || {})[a.week] = a.status; });
+      const colorOf = s => s==="present" ? "#37a24a" : s==="excused" ? "#b08a2e" : s==="absent" ? "#d33" : null;
+      let head = '<tr><th>Course</th><th>When</th>';
+      for (let w=1; w<=maxWeek; w++) head += `<th style="text-align:center;padding:6px 6px">${w}</th>`;
+      head += '<th style="text-align:center">Test results</th><th style="text-align:center">Materials</th><th style="text-align:center">Send notifications</th></tr>';
+      let rows = "";
+      courses.forEach(c=>{
+        const wk = byCourse[c.id] || {};
+        let cells = "";
+        for (let w=1; w<=maxWeek; w++){
+          const s = wk[w];
+          const col = colorOf(s);
+          cells += `<td style="text-align:center">${ col
+            ? `<span title="Week ${w}: ${s}" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${col}"></span>`
+            : '<span style="color:#cdd7e1">–</span>' }</td>`;
+        }
+        const on = !!notifOn[c.id];
+        const testCell = `<td style="text-align:center"><button class="btn test-btn" id="test-btn-${c.id}" style="background:#d33" onclick="openTestResults(${c.id})">View</button></td>`;
+        const matCell = `<td style="text-align:center"><button class="btn mat-btn" id="mat-btn-${c.id}" style="background:#d33" onclick="openMaterials(${c.id})">Open</button></td>`;
+        const notifyCell = `<td style="text-align:center"><button class="btn" style="background:${on?'#37a24a':'#94a3b3'}" onclick="toggleNotif(${sid},${c.id},${!on},this)">${on?'ON':'OFF'}</button></td>`;
+        rows += `<tr><td><b>${c.name}</b></td><td style="font-size:11px;color:#5a6b7b">${sched[c.id]}</td>${cells}${testCell}${matCell}${notifyCell}</tr>`;
+      });
+      document.getElementById("attendance").innerHTML =
+        `<table style="font-size:12px">${'<thead>'+head+'</thead>'}<tbody>${rows}</tbody></table>` +
+        `<div style="margin-top:8px;font-size:12px"><span style="color:#37a24a">● present</span>  <span style="color:#d33">● absent</span>  <span style="color:#b08a2e">● excused</span>  <span style="color:#cdd7e1">– no class</span></div>`;
+      // Test results & course folder/materials are loaded per-course on demand
+      // (openTestResults / openMaterials), shown as collapsible cards below.
     } else {
       const tests = await api("/api/test-results?studentId="+ (+document.getElementById("tr_student").value || sid));
       // teacher list shows all test results for the student in the form
-      fill("t_alltest","e_alltest", tests.map(t=>`<tr><td>${t.id}</td><td>${cname(t.courseId)}</td><td>student ${t.studentId}</td><td>${t.score}</td><td>${t.released?'YES':'no'}</td><td>${t.released?'':'<button class="btn" onclick="releaseTest('+t.id+')">Release</button>'}</td></tr>`));
+      fill("t_alltest","e_alltest", tests.map(t=>`<tr><td>${t.id}</td><td>${t.courseName||('Course '+t.courseId)}</td><td>${t.studentName||('Student '+t.studentId)}</td><td>${t.score}</td></tr>`));
     }
   } catch(e){ /* ignore per-widget */ }
 }
 
-/* student */
-async function toggleNotif(sid,cid,enabled){
-  try { await api(`/api/notifications?studentId=${sid}&courseId=${cid}&enabled=${enabled}`, {method:"PUT"}); reload(); } catch(e){}
+/* student: toggle ONLY this course's mid-term test result (click again to close) */
+async function openTestResults(cid){
+  const card=document.getElementById("testCard");
+  const same = !card.classList.contains("hidden") && card.dataset.cid===String(cid);
+  document.querySelectorAll(".test-btn").forEach(b=>b.style.background="#d33");  // all closed = red
+  if(same){ card.classList.add("hidden"); return; }                              // toggle off
+  const sid=+document.getElementById("sid").value;
+  const tests = await api(`/api/test-results?studentId=${sid}&courseId=${cid}`).catch(()=>[]);
+  fill("t_test","e_test", tests.map(t=>`<tr><td>${t.courseName||('Course '+t.courseId)}</td><td>${t.score}</td><td>${t.activityPoint}</td><td>${(t.submittedAt||'').slice(0,16).replace('T',' ')}</td></tr>`));
+  card.dataset.cid=cid; card.classList.remove("hidden"); card.scrollIntoView({behavior:"smooth"});
+  const btn=document.getElementById("test-btn-"+cid); if(btn) btn.style.background="#37a24a";  // open = green
+}
+
+/* student: toggle the course folder & materials for a course (click again to close) */
+async function openMaterials(cid){
+  const card=document.getElementById("materialsCard");
+  const same = !card.classList.contains("hidden") && card.dataset.cid===String(cid);
+  document.querySelectorAll(".mat-btn").forEach(b=>b.style.background="#d33");   // all closed = red
+  if(same){ card.classList.add("hidden"); return; }                             // toggle off
+  const folder = await api("/api/courses/"+cid+"/folder").catch(()=>null);
+  document.getElementById("folder").innerHTML = folder
+    ? `<b>Server path:</b> ${folder.serverPath}<br><b>Permissions:</b> ${folder.accessPermissions}` : "No folder.";
+  const mats = await api("/api/courses/"+cid+"/materials");
+  fill("t_mat",null, mats.map(m=>`<tr><td>${m.title}</td><td>${m.fileUrl}</td><td>${(m.uploadedAt||'').slice(0,16).replace('T',' ')}</td></tr>`));
+  card.dataset.cid=cid; card.classList.remove("hidden"); card.scrollIntoView({behavior:"smooth"});
+  const btn=document.getElementById("mat-btn-"+cid); if(btn) btn.style.background="#37a24a";  // open = green
+}
+
+/* student: toggle "send notifications" — updates the button in place, does NOT
+   reload the page, so any open Test results / Materials card stays open. */
+async function toggleNotif(sid, cid, enabled, btn){
+  try {
+    await api(`/api/notifications?studentId=${sid}&courseId=${cid}&enabled=${enabled}`, {method:"PUT"});
+    if(btn){
+      btn.style.background = enabled ? '#37a24a' : '#94a3b3';
+      btn.textContent = enabled ? 'ON' : 'OFF';
+      btn.setAttribute('onclick', `toggleNotif(${sid},${cid},${!enabled},this)`);
+    }
+  } catch(e){}
 }
 
 /* teacher */
-async function saveSheet(){
-  const body={ courseId:+a_course.value, studentId:+a_student.value, seminarScore:+a_sem.value, activityScore:+a_act.value, paperScore:+a_pap.value };
-  try { const d=await api("/api/assessment-sheets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); show("a_msg",true,"Saved. Overall grade (auto): "+d.overallGrade); }
-  catch(e){ show("a_msg",false,"Error: "+e.message); }
+async function markAtt(){
+  const week=+at_week.value;
+  if (week<1 || week>12){ show("at_msg",false,"Week must be between 1 and 12 (a semester has 12 weeks)."); return; }
+  const body={ studentId:+at_student.value, courseId:+at_course.value, week, status:at_status.value };
+  try { const d=await api("/api/attendance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); show("at_msg",true,"Attendance saved (week "+d.week+": "+d.status+")."); reload(); }
+  catch(e){ show("at_msg",false,"Error: "+e.message); }
 }
 async function createTest(){
-  const body={ courseId:+tr_course.value, studentId:+tr_student.value, score:+tr_score.value, released:false, submittedAt:new Date().toISOString().slice(0,19) };
-  try { const d=await api("/api/test-results",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); show("tr_msg",true,"Test result added (ID "+d.id+"), not released yet."); reload(); }
+  const body={ courseId:+tr_course.value, studentId:+tr_student.value, score:+tr_score.value, activityPoint:+tr_act.value, released:true, submittedAt:new Date().toISOString().slice(0,19) };
+  try { const d=await api("/api/test-results",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); show("tr_msg",true,"Test result added (ID "+d.id+")."); reload(); }
   catch(e){ show("tr_msg",false,"Error: "+e.message); }
-}
-async function releaseTest(id){
-  try { await api("/api/test-results/"+id+"/release",{method:"PUT"}); reload(); } catch(e){}
 }
 async function uploadMat(){
   const body={ courseId:+u_course.value, title:u_title.value, fileUrl:u_url.value, uploadedAt:new Date().toISOString().slice(0,19) };
@@ -194,7 +265,7 @@ async function uploadMat(){
   catch(e){ show("u_msg",false,"Error: "+e.message); }
 }
 
-loadCourses().then(reload);
+Promise.all([loadCourses(), loadStudents()]).then(reload);
 </script>
 </body>
 </html>

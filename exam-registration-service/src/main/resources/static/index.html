@@ -188,9 +188,9 @@ async function loadStudent(){
 
 function clearFilter(){ document.getElementById("f_course").value=""; document.getElementById("f_type").value=""; document.getElementById("f_sort").value="date"; renderStudent(); }
 
-// Course names (owned by lectures-service); shown instead of raw course ids.
-const COURSE_NAMES = {1:"Business Economics 2",2:"Neural Networks",3:"Software and Architecture",4:"Software and Deployment",5:"Text Mining"};
-const cname = id => COURSE_NAMES[id] || ("Course "+id);
+// Course name comes from the backend (SittingDTO.courseName, resolved from
+// lectures-service) — no hardcoded list here, single source of truth.
+const cnameOf = s => s.courseName || ("Course " + s.courseId);
 
 // UC-04: client-side filter + UC-01 grouping + UC-07 vacancy monitoring
 function renderStudent(){
@@ -209,7 +209,7 @@ function renderStudent(){
                 : sort==="capacity" ? (b.capacity-b.registeredCount)-(a.capacity-a.registeredCount)
                 : new Date(a.date)-new Date(b.date))
     .forEach(s=>{
-      const cap=s.registeredCount+"/"+s.capacity, c=cname(s.courseId), past = new Date(s.date) < now;
+      const cap=s.registeredCount+"/"+s.capacity, c=cnameOf(s), past = new Date(s.date) < now;
       if (past) {
         P.push(`<tr><td><span class="dot"></span></td><td>${c}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td><td>${cap}</td></tr>`);
       } else if (stuRegBy[s.id]) {
@@ -250,7 +250,7 @@ let editingId = null;
 async function loadTeacher(){
   try { allSittings = await api("/api/sittings"); } catch(e){ return; }
   fill("t_all","e_all", allSittings.map(s=>`<tr>
-      <td>${s.id}</td><td>${cname(s.courseId)}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td>
+      <td>${s.id}</td><td>${cnameOf(s)}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td>
       <td class="win">${win(s)}</td><td>${s.registeredCount}/${s.capacity}</td>
       <td><span class="dot ${s.registrationOpen?'g':'r'}"></span> ${s.registrationOpen?'OPEN':'CLOSED'}</td>
       <td>
