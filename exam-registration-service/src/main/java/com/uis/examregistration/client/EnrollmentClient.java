@@ -1,33 +1,38 @@
 package com.uis.examregistration.client;
 
+import com.uis.examregistration.dto.EnrollmentStatusDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-
-import java.util.Map;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Inter-service communication: asks the e-study-record-service whether a student
  * is enrolled in a course before allowing an exam registration.
  * (Week 10 requirement: "each app is communicating with each other".)
+ *
+ * Uses Spring {@link RestTemplate} and deserializes the response into a DTO.
  */
 @Component
 public class EnrollmentClient {
 
-    private final RestClient restClient;
+    private final RestTemplate restTemplate;
+    private final String baseUrl;
 
-    public EnrollmentClient(@Value("${estudyrecord.base-url}") String baseUrl) {
-        this.restClient = RestClient.create(baseUrl);
+    public EnrollmentClient(RestTemplate restTemplate,
+                            @Value("${estudyrecord.base-url}") String baseUrl) {
+        this.restTemplate = restTemplate;
+        this.baseUrl = baseUrl;
     }
 
     public boolean isEnrolled(Long studentId, Long courseId) {
-        Map<?, ?> response = restClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/api/enrollments/exists")
-                        .queryParam("studentId", studentId)
-                        .queryParam("courseId", courseId)
-                        .build())
-                .retrieve()
-                .body(Map.class);
-        return response != null && Boolean.TRUE.equals(response.get("enrolled"));
+        String url = UriComponentsBuilder.fromUriString(baseUrl)
+                .path("/api/enrollments/exists")
+                .queryParam("studentId", studentId)
+                .queryParam("courseId", courseId)
+                .toUriString();
+
+        EnrollmentStatusDTO response = restTemplate.getForObject(url, EnrollmentStatusDTO.class);
+        return response != null && response.isEnrolled();
     }
 }

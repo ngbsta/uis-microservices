@@ -6,21 +6,21 @@
   <title>UIS — Register for Examination</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; background: #eef2f6; color: #1f2d3d; }
+    body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; background: #eaf2e2; color: #1f2d3d; }
     header { background: #4a7d2c; color: #fff; padding: 16px 28px; }
     header h1 { margin: 0; font-size: 19px; }
     header p { margin: 4px 0 0; opacity: .9; font-size: 13px; }
     .wrap { max-width: 1180px; margin: 20px auto; padding: 0 16px; }
     .modes { display:flex; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:20px; }
     .modes button { flex:1; border:0; padding:14px; font-size:15px; font-weight:600; cursor:pointer; background:#dfe6ec; color:#5a6b7b; }
-    .modes button.active { background:#10739E; color:#fff; }
+    .modes button.active { background:#4a7d2c; color:#fff; }
     .bar { background:#fff; border-radius:8px; padding:12px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
     .bar label { font-size: 13px; color:#5a6b7b; }
     .bar input { width: 90px; padding:7px 9px; border:1px solid #cdd7e1; border-radius:6px; }
     .card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:20px; overflow:hidden; }
     .card h2 { font-size:14px; margin:0; padding:11px 16px; color:#fff; }
-    .sec-reg h2  { background:#3a7a3a; } .sec-can h2 { background:#4a90a4; }
-    .sec-cant h2 { background:#b08a2e; } .sec-teach h2{ background:#10739E; } .sec-list h2 { background:#566573; }
+    .sec-reg h2  { background:#3a7a3a; } .sec-can h2 { background:#6aa84f; }
+    .sec-cant h2 { background:#b08a2e; } .sec-teach h2{ background:#4a7d2c; } .sec-list h2 { background:#3a6322; }
     table { width:100%; border-collapse:collapse; font-size:12.5px; }
     th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #eef2f6; vertical-align:top; }
     th { color:#5a6b7b; font-weight:600; background:#f7f9fb; }
@@ -33,7 +33,7 @@
     .teach-body .row { display:flex; gap:10px; flex-wrap:wrap; } .teach-body .row > div { flex:1; min-width:120px; }
     .teach-body label { display:block; font-size:12px; color:#5a6b7b; margin:6px 0 3px; }
     .teach-body input, .teach-body select { width:100%; padding:7px 9px; border:1px solid #cdd7e1; border-radius:6px; }
-    .teach-body button { margin-top:12px; background:#10739E; color:#fff; border:0; padding:9px 15px; border-radius:6px; cursor:pointer; }
+    .teach-body button { margin-top:12px; background:#4a7d2c; color:#fff; border:0; padding:9px 15px; border-radius:6px; cursor:pointer; }
     .msg { margin:10px 16px 14px; padding:9px 12px; border-radius:6px; font-size:13px; display:none; }
     .msg.ok { background:#d6f5e0; color:#1c7a42; display:block; } .msg.err { background:#fde2e2; color:#b8312f; display:block; }
     .reason { color:#b8312f; font-size:12px; } .win { font-size:11.5px; color:#566573; } .hidden { display:none; }
@@ -188,6 +188,10 @@ async function loadStudent(){
 
 function clearFilter(){ document.getElementById("f_course").value=""; document.getElementById("f_type").value=""; document.getElementById("f_sort").value="date"; renderStudent(); }
 
+// Course names (owned by lectures-service); shown instead of raw course ids.
+const COURSE_NAMES = {1:"Business Economics 2",2:"Neural Networks",3:"Software and Architecture",4:"Software and Deployment",5:"Text Mining"};
+const cname = id => COURSE_NAMES[id] || ("Course "+id);
+
 // UC-04: client-side filter + UC-01 grouping + UC-07 vacancy monitoring
 function renderStudent(){
   const fc = document.getElementById("f_course").value.trim();
@@ -205,7 +209,7 @@ function renderStudent(){
                 : sort==="capacity" ? (b.capacity-b.registeredCount)-(a.capacity-a.registeredCount)
                 : new Date(a.date)-new Date(b.date))
     .forEach(s=>{
-      const cap=s.registeredCount+"/"+s.capacity, c="course "+s.courseId, past = new Date(s.date) < now;
+      const cap=s.registeredCount+"/"+s.capacity, c=cname(s.courseId), past = new Date(s.date) < now;
       if (past) {
         P.push(`<tr><td><span class="dot"></span></td><td>${c}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td><td>${cap}</td></tr>`);
       } else if (stuRegBy[s.id]) {
@@ -246,7 +250,7 @@ let editingId = null;
 async function loadTeacher(){
   try { allSittings = await api("/api/sittings"); } catch(e){ return; }
   fill("t_all","e_all", allSittings.map(s=>`<tr>
-      <td>${s.id}</td><td>course ${s.courseId}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td>
+      <td>${s.id}</td><td>${cname(s.courseId)}</td><td>${fmt(s.date)}</td><td>${s.room}</td><td>${s.type}</td>
       <td class="win">${win(s)}</td><td>${s.registeredCount}/${s.capacity}</td>
       <td><span class="dot ${s.registrationOpen?'g':'r'}"></span> ${s.registrationOpen?'OPEN':'CLOSED'}</td>
       <td>

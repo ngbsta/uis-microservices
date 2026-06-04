@@ -1,0 +1,50 @@
+# Mendel UIS Student Portal — 3 Spring Boot microservices.
+# Each service is built from its own Dockerfile and runs on a shared network so
+# they can reach each other by service name (inter-service REST via RestTemplate).
+#
+#   docker compose up --build
+#
+# Then open:  http://localhost:8081  8082  8083
+services:
+
+  e-study-record-service:
+    build: ./e-study-record-service
+    container_name: e-study-record-service
+    ports:
+      - "8082:8082"
+    environment:
+      # e-study-record -> lectures (resolve course names). No depends_on: the client
+      # degrades gracefully if lectures isn't up yet, avoiding a circular dependency.
+      LECTURES_BASE_URL: http://lectures-service:8083
+    networks:
+      - uis-net
+
+  exam-registration-service:
+    build: ./exam-registration-service
+    container_name: exam-registration-service
+    ports:
+      - "8081:8081"
+    environment:
+      # exam-registration -> e-study-record (reach by service name on the network)
+      ESTUDYRECORD_BASE_URL: http://e-study-record-service:8082
+    depends_on:
+      - e-study-record-service
+    networks:
+      - uis-net
+
+  lectures-service:
+    build: ./lectures-service
+    container_name: lectures-service
+    ports:
+      - "8083:8083"
+    environment:
+      # lectures -> exam-registration (reach by service name on the network)
+      EXAMREGISTRATION_BASE_URL: http://exam-registration-service:8081
+    depends_on:
+      - exam-registration-service
+    networks:
+      - uis-net
+
+networks:
+  uis-net:
+    driver: bridge

@@ -1,9 +1,12 @@
 package com.uis.estudyrecord.service;
 
+import com.uis.estudyrecord.client.LecturesClient;
 import com.uis.estudyrecord.domain.Enrollment;
 import com.uis.estudyrecord.domain.ExamResult;
 import com.uis.estudyrecord.domain.Notification;
 import com.uis.estudyrecord.domain.Student;
+import com.uis.estudyrecord.dto.CourseDTO;
+import com.uis.estudyrecord.dto.ExamResultDTO;
 import com.uis.estudyrecord.exception.NotFoundException;
 import com.uis.estudyrecord.repository.EnrollmentRepository;
 import com.uis.estudyrecord.repository.ExamResultRepository;
@@ -24,15 +27,44 @@ public class StudyRecordService {
     private final EnrollmentRepository enrollmentRepository;
     private final ExamResultRepository resultRepository;
     private final NotificationRepository notificationRepository;
+    private final LecturesClient lecturesClient;
 
     public StudyRecordService(StudentRepository studentRepository,
                               EnrollmentRepository enrollmentRepository,
                               ExamResultRepository resultRepository,
-                              NotificationRepository notificationRepository) {
+                              NotificationRepository notificationRepository,
+                              LecturesClient lecturesClient) {
         this.studentRepository = studentRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.resultRepository = resultRepository;
         this.notificationRepository = notificationRepository;
+        this.lecturesClient = lecturesClient;
+    }
+
+    // ---- Course catalogue (inter-service: fetched from lectures-service) ----
+    public List<CourseDTO> getCourses() {
+        return lecturesClient.getCourses();
+    }
+
+    /** Map an exam result to a DTO, attaching the course name from lectures-service. */
+    private ExamResultDTO toDto(ExamResult r, Map<Long, String> courseNames) {
+        ExamResultDTO dto = new ExamResultDTO();
+        dto.setId(r.getId());
+        dto.setStudentId(r.getStudentId());
+        dto.setCourseId(r.getCourseId());
+        dto.setCourseName(r.getCourseId() == null ? null
+                : courseNames.getOrDefault(r.getCourseId(), "Course " + r.getCourseId()));
+        dto.setSittingId(r.getSittingId());
+        dto.setGrade(r.getGrade());
+        dto.setAttempt(r.getAttempt());
+        dto.setCredits(r.getCredits());
+        dto.setDate(r.getDate());
+        return dto;
+    }
+
+    private List<ExamResultDTO> toDtos(List<ExamResult> results) {
+        Map<Long, String> courseNames = lecturesClient.courseNames();
+        return results.stream().map(r -> toDto(r, courseNames)).toList();
     }
 
     // ---- Notifications (Notification class; Student 1 -- 0..* Notification) ----
@@ -73,8 +105,8 @@ public class StudyRecordService {
     }
 
     // ---- Exam results / history ----
-    public List<ExamResult> getResults(Long studentId) {
-        return resultRepository.findByStudentId(studentId);
+    public List<ExamResultDTO> getResults(Long studentId) {
+        return toDtos(resultRepository.findByStudentId(studentId));
     }
 
     /** Teacher: enter a new exam result. Notifies the student (BPMN "Notify Student Results"). */
@@ -113,7 +145,7 @@ public class StudyRecordService {
         Map<String, Object> overview = new LinkedHashMap<>();
         overview.put("student", student);
         overview.put("enrolments", enrolments);
-        overview.put("examHistory", results);
+        overview.put("examHistory", toDtos(results));
         overview.put("totalCredits", results.stream().mapToInt(ExamResult::getCredits).sum());
         overview.put("examsTaken", results.size());
         return overview;

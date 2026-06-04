@@ -47,18 +47,32 @@ public class DataSeeder implements CommandLineRunner {
 
         periodRepository.save(new StudyPeriod("SS 2025/2026", LocalDate.of(2026, 2, 1), LocalDate.of(2026, 6, 30)));
 
-        // all enrolled in course 1
-        enrollmentRepository.save(new Enrollment(s1.getId(), 1L, 1L, "ACTIVE"));
-        enrollmentRepository.save(new Enrollment(s2.getId(), 1L, 1L, "ACTIVE"));
-        enrollmentRepository.save(new Enrollment(s3.getId(), 1L, 1L, "ACTIVE"));
+        Student[] students = {s1, s2, s3};
+        // course id -> credits (matches the lectures-service catalogue)
+        int[] credits = {5, 6, 6, 6, 5};
+        // each student PASSES every course with a (varied) passing grade
+        String[][] grades = {
+                {"A", "B", "A", "C", "B"},   // Kutay
+                {"B", "A", "B", "B", "A"},   // Myat
+                {"C", "B", "A", "B", "C"},   // Umer
+        };
 
-        // one existing graded result for student 1
-        resultRepository.save(new ExamResult(s1.getId(), 1L, "B", 1, 6, LocalDate.of(2025, 6, 20)));
+        for (int si = 0; si < students.length; si++) {
+            Student st = students[si];
+            for (long courseId = 1; courseId <= 5; courseId++) {
+                int ci = (int) (courseId - 1);
+                enrollmentRepository.save(new Enrollment(st.getId(), courseId, 1L, "ACTIVE"));
+                // passing grade for every course (sittingId left null — these are recorded results)
+                resultRepository.save(new ExamResult(st.getId(), courseId, null,
+                        grades[si][ci], 1, credits[ci], LocalDate.of(2026, 1, 20 + ci)));
+            }
+        }
 
         // sample notification for student 1 (Student 1 -- 0..* Notification)
         notificationRepository.save(new Notification(s1.getId(),
-                "Your exam result has been published: grade B (6 credits)."));
+                "Your exam results have been published — all courses passed."));
 
-        System.out.println(">>> e-study-record seeded (3 students + notification). Singleton: " + DatabaseConn.getInstance().getConn());
+        System.out.println(">>> e-study-record seeded: 3 students, all passing 5 courses. Singleton: "
+                + DatabaseConn.getInstance().getConn());
     }
 }

@@ -26,13 +26,16 @@ public class DataSeeder implements CommandLineRunner {
         if (sittingRepository.count() > 0) {
             return;
         }
-        // OPEN sitting with free capacity (course id 1, teacher id 1)
-        sittingRepository.save(new ExamSitting(
-                LocalDateTime.now().plusDays(20), "Q01", "Written", 30,
-                LocalDateTime.now().minusDays(2), LocalDateTime.now().plusDays(10),
-                LocalDateTime.now().plusDays(15), 1L, 1L));
+        // One OPEN sitting (free capacity) per course (ids 1..5, owned by lectures-service)
+        String[] rooms = {"Q01", "Q02", "Q03", "Q04", "Q05"};
+        for (long courseId = 1; courseId <= 5; courseId++) {
+            sittingRepository.save(new ExamSitting(
+                    LocalDateTime.now().plusDays(20), rooms[(int) (courseId - 1)], "Written", 30,
+                    LocalDateTime.now().minusDays(2), LocalDateTime.now().plusDays(10),
+                    LocalDateTime.now().plusDays(15), courseId, 1L));
+        }
 
-        // Sitting whose registration window has not opened yet
+        // Sitting whose registration window has not opened yet (course 1)
         sittingRepository.save(new ExamSitting(
                 LocalDateTime.now().plusDays(40), "Q02", "Oral", 15,
                 LocalDateTime.now().plusDays(5), LocalDateTime.now().plusDays(25),

@@ -21,7 +21,7 @@ Each module is owned by one team member but all three are delivered here:
 - **H2** in-memory DB (default — no install) · **PostgreSQL** (optional `postgres` profile)
 - **ModelMapper** (Entity ↔ DTO) in exam-registration-service
 - **Design pattern: Singleton** (`repository/DatabaseConn` in every service)
-- Plain HTML/JS web UIs (served as Spring Boot static resources)
+- Plain HTML/JS web UIs (served as Spring Boot static resources), MENDELU green theme
 
 ## 2. Prerequisites
 - **JDK 17** (e.g. Eclipse Temurin)
@@ -48,8 +48,11 @@ cd e-study-record-service      &&  mvn spring-boot:run     # port 8082
 cd lectures-service            &&  mvn spring-boot:run     # port 8083
 ```
 Each service seeds consistent demo data on first start:
-- Students: Kutay Tanriverdi (#1), Myat Noe Khin (#2), Muhammad Umer Ijaz (#3) — all enrolled in course #1 (Data Structures & Algorithms)
-- One open exam sitting + course timetable, assessment sheet, materials, etc.
+- **5 courses** (ids 1–5): Business Economics 2, Neural Networks, Software and Architecture,
+  Software and Deployment, Text Mining.
+- Students: Kutay Tanriverdi (#1), Myat Noe Khin (#2), Muhammad Umer Ijaz (#3) — **all enrolled
+  in all 5 courses and passing each with a grade**.
+- One open exam sitting per course + course timetable, assessment sheet, materials, etc.
 
 Then open the three UIs in a browser:
 - **http://localhost:8081/** — Register for Examination
@@ -72,9 +75,10 @@ Then open the three UIs in a browser:
   date order).
 
 ### 8082 — E-Study Record
-- **Teacher Mode:** pick a student (dropdown by name + id), **enter / update an exam result**
-  (grade A–F, credits, attempt).
-- **Student Mode:** study **overview** (total credits, exams taken) and **exam history**.
+- **Teacher Mode:** pick a student (dropdown by name + id), pick a **class** (list fetched from
+  lectures-service), **enter / update an exam result** (grade A–F, credits, attempt).
+- **Student Mode:** study **overview** (total credits, exams taken) and **exam history** — each
+  grade shows the **real class name** (resolved from lectures-service).
 
 ### 8083 — My Lectures Sheet
 - **Student Mode:** course **timetable** + attendance, **assessment sheet**, released
@@ -82,12 +86,39 @@ Then open the three UIs in a browser:
 - **Teacher Mode:** **maintain assessment sheet** (overall grade auto-computed from
   seminar/activity/paper), add & **release test results**, **upload documents**.
 
-## 5. Inter-service communication
+## 5. Inter-service communication (Spring `RestTemplate`, responses end with a DTO)
+The three services form a **communication cycle** — every service both calls and is called:
 ```
-exam-registration-service ──GET /api/enrollments/exists?studentId&courseId──▶ e-study-record-service
+   lectures(8083) ──▶ exam-registration(8081) ──▶ e-study-record(8082) ──▶ lectures(8083)
 ```
-Before a registration is accepted, exam-registration asks e-study-record whether the
-student is enrolled in the sitting's course (Week-10 requirement: apps communicate).
+- **lectures → exam-registration**: `GET /api/courses/{id}/exam-sittings` fetches that course's
+  exam sittings from exam-registration. Returns `List<ExamSittingDTO>`.
+- **exam-registration → e-study-record**: before a registration is accepted, it asks whether the
+  student is enrolled in the sitting's course. Returns `EnrollmentStatusDTO`.
+- **e-study-record → lectures**: resolves real course **names** for a student's grades (and the
+  `GET /api/courses` proxy). Returns `List<CourseDTO>` / enriched `ExamResultDTO`.
+
+All calls use Spring **`RestTemplate`** (`config/RestTemplateConfig` + `client/…Client`) and
+deserialize the response into a **DTO**.
+
+### Prove it — one command
+With the three services running, from the project root:
+```powershell
+.\prove-communication.ps1
+```
+It exercises all three links and prints `[PROVEN]` for each. The strongest evidence is link 2:
+the **same** registration request is **accepted (HTTP 201)** for an enrolled student but
+**rejected (HTTP 422 "not enrolled")** for a non-enrolled one — so exam-registration's outcome
+genuinely depends on data owned by e-study-record.
+
+## 5b. Run with Docker (Dockerfile per service + root docker-compose)
+Each service has its own `Dockerfile` (multi-stage Maven build → JRE). One command builds and
+starts all three on a shared network where they reach each other by service name:
+```bash
+docker compose up --build
+```
+Inter-service URLs are overridden in `docker-compose.yml` via env vars
+(`ESTUDYRECORD_BASE_URL`, `EXAMREGISTRATION_BASE_URL`). Open 8081 / 8082 / 8083 as before.
 
 ## 6. PostgreSQL option (lecturer's setup)
 ```bash
@@ -122,6 +153,7 @@ services). Open Bruno → *Open Collection* → select that folder → Send any 
 |--------|------|
 | GET | /api/students , /api/students/{id} |
 | GET | /api/students/{id}/overview , /exam-history , /credits |
+| GET | /api/courses  *(proxy → lectures-service)* |
 | GET | /api/enrollments?studentId= , /api/enrollments/exists?studentId=&courseId= |
 | POST | /api/enrollments |
 | GET | /api/results?studentId= |
@@ -132,6 +164,7 @@ services). Open Bruno → *Open Collection* → select that folder → Send any 
 | Method | Path |
 |--------|------|
 | GET | /api/courses , /api/courses/{id} , /api/courses/{id}/lectures |
+| GET | /api/courses/{id}/exam-sittings  *(calls exam-registration)* |
 | GET | /api/courses/{id}/timetable , /folder , /materials |
 | POST | /api/materials |
 | GET | /api/assessment-sheets?studentId= |

@@ -1,6 +1,7 @@
 package com.uis.lectures.controller;
 
 import com.uis.lectures.domain.*;
+import com.uis.lectures.dto.ExamSittingDTO;
 import com.uis.lectures.service.LecturesService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,10 @@ public class LecturesController {
 
     @GetMapping("/courses/{id}/lectures")
     public List<Lecture> getLectures(@PathVariable Long id) { return service.getLectures(id); }
+
+    // Inter-service: a course's exam sittings, fetched from exam-registration-service
+    @GetMapping("/courses/{id}/exam-sittings")
+    public List<ExamSittingDTO> getExamSittings(@PathVariable Long id) { return service.getExamSittings(id); }
 
     @GetMapping("/teachers")
     public List<Teacher> getTeachers() { return service.getTeachers(); }

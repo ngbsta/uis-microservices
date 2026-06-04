@@ -4,6 +4,9 @@ import com.uis.estudyrecord.domain.Enrollment;
 import com.uis.estudyrecord.domain.ExamResult;
 import com.uis.estudyrecord.domain.Notification;
 import com.uis.estudyrecord.domain.Student;
+import com.uis.estudyrecord.dto.CourseDTO;
+import com.uis.estudyrecord.dto.EnrollmentStatusDTO;
+import com.uis.estudyrecord.dto.ExamResultDTO;
 import com.uis.estudyrecord.service.StudyRecordService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,9 +53,15 @@ public class StudyRecordController {
         return service.getStudyOverview(id);
     }
 
-    // View past exam sittings (exam history)
+    // Course catalogue, fetched from lectures-service (inter-service communication)
+    @GetMapping("/courses")
+    public List<CourseDTO> getCourses() {
+        return service.getCourses();
+    }
+
+    // View past exam sittings (exam history) — enriched with course names
     @GetMapping("/students/{id}/exam-history")
-    public List<ExamResult> getExamHistory(@PathVariable Long id) {
+    public List<ExamResultDTO> getExamHistory(@PathVariable Long id) {
         return service.getResults(id);
     }
 
@@ -67,10 +76,10 @@ public class StudyRecordController {
         return service.getEnrollments(studentId);
     }
 
-    // Called by exam-registration-service (inter-service communication)
+    // Called by exam-registration-service (inter-service communication). Ends with a DTO.
     @GetMapping("/enrollments/exists")
-    public Map<String, Boolean> isEnrolled(@RequestParam Long studentId, @RequestParam Long courseId) {
-        return Map.of("enrolled", service.isEnrolled(studentId, courseId));
+    public EnrollmentStatusDTO isEnrolled(@RequestParam Long studentId, @RequestParam Long courseId) {
+        return new EnrollmentStatusDTO(studentId, courseId, service.isEnrolled(studentId, courseId));
     }
 
     @PostMapping("/enrollments")
@@ -79,7 +88,7 @@ public class StudyRecordController {
     }
 
     @GetMapping("/results")
-    public List<ExamResult> getResults(@RequestParam Long studentId) {
+    public List<ExamResultDTO> getResults(@RequestParam Long studentId) {
         return service.getResults(studentId);
     }
 

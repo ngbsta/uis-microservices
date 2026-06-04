@@ -1,6 +1,8 @@
 package com.uis.lectures.service;
 
+import com.uis.lectures.client.ExamRegistrationClient;
 import com.uis.lectures.domain.*;
+import com.uis.lectures.dto.ExamSittingDTO;
 import com.uis.lectures.exception.NotFoundException;
 import com.uis.lectures.repository.*;
 import org.springframework.stereotype.Service;
@@ -21,12 +23,14 @@ public class LecturesService {
     private final TestResultRepository testResultRepository;
     private final CourseFolderRepository courseFolderRepository;
     private final EmailNotificationRepository emailNotificationRepository;
+    private final ExamRegistrationClient examRegistrationClient;
 
     public LecturesService(CourseRepository courseRepository, LectureRepository lectureRepository,
                            CourseMaterialRepository materialRepository, TeacherRepository teacherRepository,
                            TimetableRepository timetableRepository, AssessmentSheetRepository assessmentSheetRepository,
                            TestResultRepository testResultRepository, CourseFolderRepository courseFolderRepository,
-                           EmailNotificationRepository emailNotificationRepository) {
+                           EmailNotificationRepository emailNotificationRepository,
+                           ExamRegistrationClient examRegistrationClient) {
         this.courseRepository = courseRepository;
         this.lectureRepository = lectureRepository;
         this.materialRepository = materialRepository;
@@ -36,10 +40,17 @@ public class LecturesService {
         this.testResultRepository = testResultRepository;
         this.courseFolderRepository = courseFolderRepository;
         this.emailNotificationRepository = emailNotificationRepository;
+        this.examRegistrationClient = examRegistrationClient;
     }
 
     // ---- Courses / lectures / teachers ----
     public List<Course> getCourses() { return courseRepository.findAll(); }
+
+    /** Inter-service: exam sittings for a course, fetched from exam-registration-service. */
+    public List<ExamSittingDTO> getExamSittings(Long courseId) {
+        getCourse(courseId); // 404 if the course does not exist here
+        return examRegistrationClient.getSittingsForCourse(courseId);
+    }
 
     public Course getCourse(Long id) {
         return courseRepository.findById(id)
