@@ -75,30 +75,35 @@ Then open the three UIs in a browser:
   date order).
 
 ### 8082 — E-Study Record
-- **Teacher Mode:** pick a student (dropdown by name + id), pick a **class** (list fetched from
-  lectures-service), **enter / update an exam result** (grade A–F, credits, attempt).
+- **Teacher Mode:** pick a student (by name) and a **class** (list fetched from lectures-service),
+  **enter / update an exam result** (grade A–F). **Credits are fixed per course** (fetched from
+  lectures, not editable); there is **no attempt field** — the exam sitting *is* the attempt.
 - **Student Mode:** study **overview** (total credits, exams taken) and **exam history** — each
-  grade shows the **real class name** (resolved from lectures-service).
+  grade shows the **real class name + fixed credits** (resolved from lectures-service).
 
 ### 8083 — My Lectures Sheet
-- **Student Mode:** course **timetable** + attendance, **assessment sheet**, released
-  **test results**, **course folder** + materials, **email notification** toggle.
-- **Teacher Mode:** **maintain assessment sheet** (overall grade auto-computed from
-  seminar/activity/paper), add & **release test results**, **upload documents**.
+- **Student Mode:** one table per the real UIS sheet — each course row shows its **schedule (When)**
+  and **weekly attendance** (weeks 1–12, present/absent/excused), plus per-course actions:
+  **Test results** (mid-term score + activity point, collapsible), **Materials** (course folder +
+  documents, collapsible), and a **Send notifications** ON/OFF toggle.
+- **Teacher Mode:** **mark attendance** (week 1–12), **add a mid-term test result** (score +
+  activity point), **upload documents**.
+- *(The final/overall grade is NOT here — it lives in E-Study Record. No assessment-sheet/overall
+  grade and no release workflow.)*
 
 ## 5. Inter-service communication (Spring `RestTemplate`, responses end with a DTO)
-The three services form a **communication cycle** — every service both calls and is called:
-```
-   lectures(8083) ──▶ exam-registration(8081) ──▶ e-study-record(8082) ──▶ lectures(8083)
-```
-- **lectures → exam-registration**: `GET /api/courses/{id}/exam-sittings` fetches that course's
-  exam sittings from exam-registration. Returns `List<ExamSittingDTO>`.
-- **exam-registration → e-study-record**: before a registration is accepted, it asks whether the
-  student is enrolled in the sitting's course. Returns `EnrollmentStatusDTO`.
-- **e-study-record → lectures**: resolves real course **names** for a student's grades (and the
-  `GET /api/courses` proxy). Returns `List<CourseDTO>` / enriched `ExamResultDTO`.
+Every service both **calls** and **is called** — names and credits are resolved from their owning
+service (single source of truth), never hardcoded in a UI. Five inter-service calls:
 
-All calls use Spring **`RestTemplate`** (`config/RestTemplateConfig` + `client/…Client`) and
+| Caller → Callee | Endpoint | Why | Response DTO |
+|-----------------|----------|-----|--------------|
+| exam-registration → e-study-record | `GET /api/enrollments/exists` | block registration if not enrolled | `EnrollmentStatusDTO` |
+| exam-registration → lectures | `GET /api/courses` | course **name** on each sitting | `List<CourseDTO>` |
+| lectures → exam-registration | `GET /api/sittings` | a course's exam sittings | `List<ExamSittingDTO>` |
+| lectures → e-study-record | `GET /api/students` | student list (names) | `List<StudentDTO>` |
+| e-study-record → lectures | `GET /api/courses` | course **names + fixed credits** on grades | `List<CourseDTO>` |
+
+All calls use Spring **`RestTemplate`** (`config/RestTemplateConfig` + a class in `client/`) and
 deserialize the response into a **DTO**.
 
 ### Prove it — one command
@@ -106,10 +111,10 @@ With the three services running, from the project root:
 ```powershell
 .\prove-communication.ps1
 ```
-It exercises all three links and prints `[PROVEN]` for each. The strongest evidence is link 2:
-the **same** registration request is **accepted (HTTP 201)** for an enrolled student but
-**rejected (HTTP 422 "not enrolled")** for a non-enrolled one — so exam-registration's outcome
-genuinely depends on data owned by e-study-record.
+It exercises the core links and prints `[PROVEN]` for each. The strongest evidence: the **same**
+registration request is **accepted (HTTP 201)** for an enrolled student but **rejected (HTTP 422
+"not enrolled")** for a non-enrolled one — so exam-registration's outcome genuinely depends on
+data owned by e-study-record.
 
 ## 5b. Run with Docker (Dockerfile per service + root docker-compose)
 Each service has its own `Dockerfile` (multi-stage Maven build → JRE). One command builds and
@@ -118,7 +123,7 @@ starts all three on a shared network where they reach each other by service name
 docker compose up --build
 ```
 Inter-service URLs are overridden in `docker-compose.yml` via env vars
-(`ESTUDYRECORD_BASE_URL`, `EXAMREGISTRATION_BASE_URL`). Open 8081 / 8082 / 8083 as before.
+(`ESTUDYRECORD_BASE_URL`, `EXAMREGISTRATION_BASE_URL`, `LECTURES_BASE_URL`). Open 8081 / 8082 / 8083 as before.
 
 ## 6. PostgreSQL option (lecturer's setup)
 ```bash
@@ -157,21 +162,21 @@ services). Open Bruno → *Open Collection* → select that folder → Send any 
 | GET | /api/enrollments?studentId= , /api/enrollments/exists?studentId=&courseId= |
 | POST | /api/enrollments |
 | GET | /api/results?studentId= |
-| POST | /api/results  *(enter grade)* |
-| PUT | /api/results/{id}?grade=&attempt=&credits=  *(update grade)* |
+| POST | /api/results  *(enter grade; credits taken from the course)* |
+| PUT | /api/results/{id}?grade=  *(update grade only — credits fixed, no attempt)* |
 
 ### lectures (8083)
 | Method | Path |
 |--------|------|
 | GET | /api/courses , /api/courses/{id} , /api/courses/{id}/lectures |
 | GET | /api/courses/{id}/exam-sittings  *(calls exam-registration)* |
+| GET | /api/students  *(proxy → e-study-record)* |
 | GET | /api/courses/{id}/timetable , /folder , /materials |
 | POST | /api/materials |
-| GET | /api/assessment-sheets?studentId= |
-| POST | /api/assessment-sheets  *(auto overall grade)* |
-| PUT | /api/assessment-sheets/{id}/scores?seminar=&activity=&paper= |
-| GET | /api/test-results?studentId= |
-| POST | /api/test-results , PUT /api/test-results/{id}/release |
+| GET | /api/attendance?studentId= , /api/courses/{id}/attendance?studentId= |
+| POST | /api/attendance  *(mark attendance; week 1–12)* |
+| GET | /api/test-results?studentId=  *(optional &courseId=)* |
+| POST | /api/test-results  *(score + activity point)* |
 | GET | /api/notifications?studentId= , PUT /api/notifications?studentId=&courseId=&enabled= |
 | GET | /api/teachers , PUT /api/courses/{id}/teacher?teacherId= |
 
@@ -180,4 +185,4 @@ services). Open Bruno → *Open Collection* → select that folder → Send any 
 - **Controller → Service → Repository → DTO → Entity** layering ← extended implementation class diagram
 - **register() flow** (validate window / capacity / enrolment, increment count) ← sequence & activity diagrams
 - **Use cases** (register, unregister, filter, vacancy monitoring, publish exam, enter grade,
-  assessment sheet, timetable…) ← the per-module use-case diagrams
+  attendance, mid-term test results, timetable…) ← the per-module use-case diagrams
