@@ -101,7 +101,7 @@ public class StudyRecordService {
         return credits != null ? credits : 0;
     }
 
-    /** Letter grade from the overall score (mid-term + final average). */
+    /** Letter grade from the overall score = mid-term(/50) + final(/50), out of 100. */
     public static String gradeFor(double overall) {
         if (overall >= 90) return "A";
         if (overall >= 80) return "B";
@@ -116,12 +116,22 @@ public class StudyRecordService {
      * computed from both, and credits come from the course. This makes the overall grade
      * in E-Study Record depend directly on the mid-term held by My Lectures Sheet.
      */
+    /** Mid-term contributes 50% — the lectures test score (0-100) is taken as out of 50. */
+    private double midtermComponent(Long studentId, Long courseId) {
+        return Math.min(lecturesClient.midtermScore(studentId, courseId), 100.0) / 2.0;
+    }
+    /** Final exam contributes 50% — clamp the teacher's input to 0-50. */
+    private double finalComponent(Double finalScore) {
+        double f = finalScore != null ? finalScore : 0.0;
+        return Math.max(0.0, Math.min(f, 50.0));
+    }
+
     public ExamResult addResult(ResultRequest req) {
-        double midterm = lecturesClient.midtermScore(req.getStudentId(), req.getCourseId());
-        double finalScore = req.getFinalScore() != null ? req.getFinalScore() : 0.0;
+        double midterm = midtermComponent(req.getStudentId(), req.getCourseId());
+        double finalScore = finalComponent(req.getFinalScore());
         ExamResult r = new ExamResult(
                 req.getStudentId(), req.getCourseId(), req.getSittingId(),
-                midterm, finalScore, gradeFor((midterm + finalScore) / 2.0),
+                midterm, finalScore, gradeFor(midterm + finalScore),
                 creditsForCourse(req.getCourseId()),
                 req.getDate() != null ? req.getDate() : java.time.LocalDate.now());
         return resultRepository.save(r);
@@ -131,10 +141,11 @@ public class StudyRecordService {
     public ExamResult updateResult(Long id, double finalScore) {
         ExamResult r = resultRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Result not found: " + id));
-        double midterm = lecturesClient.midtermScore(r.getStudentId(), r.getCourseId());
+        double midterm = midtermComponent(r.getStudentId(), r.getCourseId());
+        double fin = finalComponent(finalScore);
         r.setMidtermScore(midterm);
-        r.setFinalScore(finalScore);
-        r.setGrade(gradeFor((midterm + finalScore) / 2.0));
+        r.setFinalScore(fin);
+        r.setGrade(gradeFor(midterm + fin));
         r.setCredits(creditsForCourse(r.getCourseId()));
         return resultRepository.save(r);
     }

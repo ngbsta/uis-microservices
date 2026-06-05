@@ -62,12 +62,12 @@
         <div class="body">
           <div style="background:#eef5e6;border-left:4px solid #4a7d2c;padding:9px 12px;border-radius:5px;margin-bottom:12px;font-size:13px;">
             For: <b id="formStudent">—</b> · The <b>mid-term</b> comes from My Lectures Sheet (8083);
-            you enter the <b>final</b>; the grade is <b>(mid-term + final) / 2 → A–F</b>.
+            you enter the <b>final</b>; overall = <b>mid-term + final</b> → grade <b>A–F</b>.
           </div>
           <div class="row">
             <div><label class="f">Class</label><select id="g_course"></select></div>
             <div><label class="f">Exam sitting ID (optional)</label><input id="g_sitting" type="number" placeholder="—"></div>
-            <div><label class="f">Final exam score (0–100)</label><input id="g_final" type="number" min="0" max="100" value="80"></div>
+            <div><label class="f">Final exam score</label><input id="g_final" type="number" min="0" max="50" value="40"></div>
             <div><label class="f">Date</label><input id="g_date" type="date"></div>
           </div>
           <button class="act" id="saveBtn" onclick="saveResult()">Save result</button>

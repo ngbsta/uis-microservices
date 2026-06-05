@@ -53,10 +53,10 @@ public class DataSeeder implements CommandLineRunner {
             for (long courseId = 1; courseId <= 5; courseId++) {
                 int ci = (int) (courseId - 1);
                 enrollmentRepository.save(new Enrollment(st.getId(), courseId, 1L, "ACTIVE"));
-                // mid-term mirrors the lectures-service seed (70 + sid*5 + courseIndex); final is varied.
-                double midterm = 70 + sid * 5 + ci;
-                double finalScore = 72 + ci * 3;
-                String grade = StudyRecordService.gradeFor((midterm + finalScore) / 2.0);
+                // mid-term = half of the lectures test (70 + sid*5 + ci, out of 100) -> out of 50.
+                double midterm = (70 + sid * 5 + ci) / 2.0;
+                double finalScore = 35 + ci * 2;   // out of 50, varied per course
+                String grade = StudyRecordService.gradeFor(midterm + finalScore);
                 resultRepository.save(new ExamResult(st.getId(), courseId, null,
                         midterm, finalScore, grade, credits[ci], LocalDate.of(2026, 1, 20 + ci)));
             }

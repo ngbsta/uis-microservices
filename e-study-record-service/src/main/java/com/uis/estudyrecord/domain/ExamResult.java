@@ -33,9 +33,9 @@ public class ExamResult {
         this.date = date;
     }
 
-    /** Overall score = average of mid-term (from lectures) and final exam. */
+    /** Overall score = SUM of mid-term (from lectures) and final exam (each out of 100, total out of 200). */
     public double overall() {
-        return (midtermScore + finalScore) / 2.0;
+        return midtermScore + finalScore;
     }
 
     public Long getId() { return id; }
