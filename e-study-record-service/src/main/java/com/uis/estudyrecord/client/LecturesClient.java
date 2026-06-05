@@ -61,4 +61,26 @@ public class LecturesClient {
         }
         return map;
     }
+
+    /**
+     * Inter-service: the student's mid-term test score for a course, taken from the
+     * My Lectures Sheet service (lectures, 8083). This is what links the lectures
+     * mid-term to the overall grade computed here. Returns 0 if none / unreachable.
+     */
+    public double midtermScore(Long studentId, Long courseId) {
+        try {
+            List<Map<String, Object>> results = restTemplate.exchange(
+                    baseUrl + "/api/test-results?studentId=" + studentId + "&courseId=" + courseId,
+                    HttpMethod.GET, null,
+                    new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            ).getBody();
+            if (results != null && !results.isEmpty()) {
+                Object score = results.get(0).get("score");
+                if (score instanceof Number n) return n.doubleValue();
+            }
+        } catch (Exception e) {
+            // lectures down — degrade to 0
+        }
+        return 0.0;
+    }
 }

@@ -6,6 +6,7 @@ import com.uis.estudyrecord.domain.ExamResult;
 import com.uis.estudyrecord.domain.Student;
 import com.uis.estudyrecord.dto.CourseDTO;
 import com.uis.estudyrecord.dto.ExamResultDTO;
+import com.uis.estudyrecord.dto.ResultRequest;
 import com.uis.estudyrecord.exception.NotFoundException;
 import com.uis.estudyrecord.repository.EnrollmentRepository;
 import com.uis.estudyrecord.repository.ExamResultRepository;
@@ -50,6 +51,9 @@ public class StudyRecordService {
         dto.setCourseName(r.getCourseId() == null ? null
                 : courseNames.getOrDefault(r.getCourseId(), "Course " + r.getCourseId()));
         dto.setSittingId(r.getSittingId());
+        dto.setMidtermScore(r.getMidtermScore());
+        dto.setFinalScore(r.getFinalScore());
+        dto.setOverall(Math.round(r.overall() * 10.0) / 10.0);
         dto.setGrade(r.getGrade());
         dto.setCredits(r.getCredits());
         dto.setDate(r.getDate());
@@ -97,17 +101,40 @@ public class StudyRecordService {
         return credits != null ? credits : 0;
     }
 
-    /** Teacher: enter a new exam result. Credits are taken from the course automatically. */
-    public ExamResult addResult(ExamResult result) {
-        result.setCredits(creditsForCourse(result.getCourseId()));
-        return resultRepository.save(result);
+    /** Letter grade from the overall score (mid-term + final average). */
+    public static String gradeFor(double overall) {
+        if (overall >= 90) return "A";
+        if (overall >= 80) return "B";
+        if (overall >= 70) return "C";
+        if (overall >= 60) return "D";
+        return "F";
     }
 
-    /** Teacher: update an exam result (grade only). Credits stay fixed to the course. */
-    public ExamResult updateResult(Long id, String grade) {
+    /**
+     * Teacher: enter a new exam result. The teacher provides only the FINAL exam score;
+     * the MID-TERM is fetched from lectures-service (8083), the overall grade (A-F) is
+     * computed from both, and credits come from the course. This makes the overall grade
+     * in E-Study Record depend directly on the mid-term held by My Lectures Sheet.
+     */
+    public ExamResult addResult(ResultRequest req) {
+        double midterm = lecturesClient.midtermScore(req.getStudentId(), req.getCourseId());
+        double finalScore = req.getFinalScore() != null ? req.getFinalScore() : 0.0;
+        ExamResult r = new ExamResult(
+                req.getStudentId(), req.getCourseId(), req.getSittingId(),
+                midterm, finalScore, gradeFor((midterm + finalScore) / 2.0),
+                creditsForCourse(req.getCourseId()),
+                req.getDate() != null ? req.getDate() : java.time.LocalDate.now());
+        return resultRepository.save(r);
+    }
+
+    /** Teacher: update an exam result (new FINAL score). Mid-term re-fetched, grade recomputed. */
+    public ExamResult updateResult(Long id, double finalScore) {
         ExamResult r = resultRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Result not found: " + id));
-        r.setGrade(grade);
+        double midterm = lecturesClient.midtermScore(r.getStudentId(), r.getCourseId());
+        r.setMidtermScore(midterm);
+        r.setFinalScore(finalScore);
+        r.setGrade(gradeFor((midterm + finalScore) / 2.0));
         r.setCredits(creditsForCourse(r.getCourseId()));
         return resultRepository.save(r);
     }

@@ -58,16 +58,16 @@
     <!-- TEACHER: enter / update exam result -->
     <div id="teacherView">
       <div class="card sec-form">
-        <h2 id="formTitle">Enter exam result (give a grade)</h2>
+        <h2 id="formTitle">Enter exam result (final score → grade)</h2>
         <div class="body">
-          <div style="background:#eef5e6;border-left:4px solid #4a7d2c;padding:9px 12px;border-radius:5px;margin-bottom:12px;font-size:14px;">
-            Giving grade to: <b id="formStudent">—</b>
+          <div style="background:#eef5e6;border-left:4px solid #4a7d2c;padding:9px 12px;border-radius:5px;margin-bottom:12px;font-size:13px;">
+            For: <b id="formStudent">—</b> · The <b>mid-term</b> comes from My Lectures Sheet (8083);
+            you enter the <b>final</b>; the grade is <b>(mid-term + final) / 2 → A–F</b>.
           </div>
           <div class="row">
             <div><label class="f">Class</label><select id="g_course"></select></div>
             <div><label class="f">Exam sitting ID (optional)</label><input id="g_sitting" type="number" placeholder="—"></div>
-            <div><label class="f">Grade</label>
-              <select id="g_grade"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></div>
+            <div><label class="f">Final exam score (0–100)</label><input id="g_final" type="number" min="0" max="100" value="80"></div>
             <div><label class="f">Date</label><input id="g_date" type="date"></div>
           </div>
           <button class="act" id="saveBtn" onclick="saveResult()">Save result</button>
@@ -78,7 +78,7 @@
 
       <div class="card sec-list">
         <h2>This student's exam results</h2>
-        <table><thead><tr><th>Result ID</th><th>Class</th><th>Grade</th><th>Credits</th><th>Date</th><th>Action</th></tr></thead>
+        <table><thead><tr><th>ID</th><th>Class</th><th>Mid-term (8083)</th><th>Final</th><th>Overall</th><th>Grade</th><th>Credits</th><th>Date</th><th>Action</th></tr></thead>
           <tbody id="t_res"></tbody></table>
         <div id="e_res" class="empty">— load to view —</div>
       </div>
@@ -94,7 +94,7 @@
       </div>
       <div class="card sec-list">
         <h2>Exam history (past sittings)</h2>
-        <table><thead><tr><th>Result ID</th><th>Class</th><th>Grade</th><th>Credits</th><th>Date</th></tr></thead>
+        <table><thead><tr><th>ID</th><th>Class</th><th>Mid-term (8083)</th><th>Final</th><th>Overall</th><th>Grade</th><th>Credits</th><th>Date</th></tr></thead>
           <tbody id="t_hist"></tbody></table>
         <div id="e_hist" class="empty">— load to view —</div>
       </div>
@@ -151,31 +151,31 @@ async function reload(){
   if (!document.getElementById("teacherView").classList.contains("hidden")) {
     const results = await api("/api/results?studentId=" + sid);
     fill("t_res","e_res", results.map(r => `<tr>
-        <td>${r.id}</td><td>${r.courseName ?? ('Course '+r.courseId)}</td><td class="grade">${r.grade}</td><td>${r.credits}</td><td>${fmt(r.date)}</td>
-        <td><button class="btn" onclick='editResult(${JSON.stringify(r)})'>Edit grade</button></td></tr>`));
+        <td>${r.id}</td><td>${r.courseName ?? ('Course '+r.courseId)}</td><td>${r.midtermScore}</td><td>${r.finalScore}</td><td>${r.overall}</td><td class="grade">${r.grade}</td><td>${r.credits}</td><td>${fmt(r.date)}</td>
+        <td><button class="btn" onclick='editResult(${JSON.stringify(r)})'>Edit</button></td></tr>`));
   } else {
     const ov = await api("/api/students/" + sid + "/overview");
     document.getElementById("ov_credits").textContent = ov.totalCredits;
     document.getElementById("ov_exams").textContent = ov.examsTaken;
     fill("t_hist","e_hist", ov.examHistory.map(r => `<tr>
-        <td>${r.id}</td><td>${r.courseName ?? ('Course '+r.courseId)}</td><td class="grade">${r.grade}</td><td>${r.credits}</td><td>${fmt(r.date)}</td></tr>`));
+        <td>${r.id}</td><td>${r.courseName ?? ('Course '+r.courseId)}</td><td>${r.midtermScore}</td><td>${r.finalScore}</td><td>${r.overall}</td><td class="grade">${r.grade}</td><td>${r.credits}</td><td>${fmt(r.date)}</td></tr>`));
   }
 }
 
 function editResult(r){
   if (r.courseId) document.getElementById("g_course").value = r.courseId;
   document.getElementById("g_sitting").value = r.sittingId ?? "";
-  document.getElementById("g_grade").value = r.grade;
+  document.getElementById("g_final").value = r.finalScore;
   document.getElementById("g_date").value = r.date || "";
   editingId = r.id;
-  document.getElementById("formTitle").textContent = "Update exam result #" + r.id;
+  document.getElementById("formTitle").textContent = "Update exam result #" + r.id + " (final score → grade)";
   document.getElementById("saveBtn").textContent = "Save changes";
   document.getElementById("cancelBtn").classList.remove("hidden");
   window.scrollTo({ top:0, behavior:"smooth" });
 }
 function cancelEdit(){
   editingId = null;
-  document.getElementById("formTitle").textContent = "Enter exam result (give a grade)";
+  document.getElementById("formTitle").textContent = "Enter exam result (final score → grade)";
   document.getElementById("saveBtn").textContent = "Save result";
   document.getElementById("cancelBtn").classList.add("hidden");
   document.getElementById("g_msg").style.display = "none";
@@ -183,19 +183,18 @@ function cancelEdit(){
 
 async function saveResult(){
   const sid = +document.getElementById("sid").value;
-  const grade = document.getElementById("g_grade").value;
+  const finalScore = +document.getElementById("g_final").value;
   try {
     if (editingId) {
-      const q = `?grade=${encodeURIComponent(grade)}`;
-      const dto = await api("/api/results/" + editingId + q, { method:"PUT" });
-      show("g_msg", true, "Result #" + dto.id + " updated to grade " + dto.grade);
+      const dto = await api("/api/results/" + editingId + "?finalScore=" + finalScore, { method:"PUT" });
+      show("g_msg", true, "Result #" + dto.id + " updated — grade " + dto.grade + " (overall " + dto.overall + ")");
       cancelEdit();
     } else {
       const body = { studentId: sid, courseId: +document.getElementById("g_course").value || null,
         sittingId: +document.getElementById("g_sitting").value || null,
-        grade, date: document.getElementById("g_date").value || null };
+        finalScore, date: document.getElementById("g_date").value || null };
       const dto = await api("/api/results", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
-      show("g_msg", true, "Grade saved: " + dto.grade + " (result ID " + dto.id + ")");
+      show("g_msg", true, "Saved — mid-term " + dto.midtermScore + " + final " + dto.finalScore + " → grade " + dto.grade);
     }
     reload();
   } catch(e){ show("g_msg", false, "Error: " + e.message); }

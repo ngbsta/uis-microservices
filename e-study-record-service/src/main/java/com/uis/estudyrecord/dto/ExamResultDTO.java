@@ -12,7 +12,10 @@ public class ExamResultDTO {
     private Long courseId;
     private String courseName;
     private Long sittingId;
-    private String grade;
+    private double midtermScore;   // from lectures-service (My Lectures Sheet)
+    private double finalScore;     // entered in E-Study Record
+    private double overall;        // (midterm + final) / 2
+    private String grade;          // computed A-F from overall
     private int credits;
     private LocalDate date;
 
@@ -26,6 +29,12 @@ public class ExamResultDTO {
     public void setCourseName(String courseName) { this.courseName = courseName; }
     public Long getSittingId() { return sittingId; }
     public void setSittingId(Long sittingId) { this.sittingId = sittingId; }
+    public double getMidtermScore() { return midtermScore; }
+    public void setMidtermScore(double midtermScore) { this.midtermScore = midtermScore; }
+    public double getFinalScore() { return finalScore; }
+    public void setFinalScore(double finalScore) { this.finalScore = finalScore; }
+    public double getOverall() { return overall; }
+    public void setOverall(double overall) { this.overall = overall; }
     public String getGrade() { return grade; }
     public void setGrade(String grade) { this.grade = grade; }
     public int getCredits() { return credits; }

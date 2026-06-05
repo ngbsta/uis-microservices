@@ -8,6 +8,7 @@ import com.uis.estudyrecord.repository.DatabaseConn;
 import com.uis.estudyrecord.repository.EnrollmentRepository;
 import com.uis.estudyrecord.repository.ExamResultRepository;
 import com.uis.estudyrecord.repository.StudentRepository;
+import com.uis.estudyrecord.service.StudyRecordService;
 import com.uis.estudyrecord.repository.StudyPeriodRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -45,21 +46,19 @@ public class DataSeeder implements CommandLineRunner {
         Student[] students = {s1, s2, s3};
         // course id -> credits (matches the lectures-service catalogue)
         int[] credits = {5, 6, 6, 6, 5};
-        // each student PASSES every course with a (varied) passing grade
-        String[][] grades = {
-                {"A", "B", "A", "C", "B"},   // Kutay
-                {"B", "A", "B", "B", "A"},   // Myat
-                {"C", "B", "A", "B", "C"},   // Umer
-        };
 
         for (int si = 0; si < students.length; si++) {
             Student st = students[si];
+            long sid = st.getId();
             for (long courseId = 1; courseId <= 5; courseId++) {
                 int ci = (int) (courseId - 1);
                 enrollmentRepository.save(new Enrollment(st.getId(), courseId, 1L, "ACTIVE"));
-                // passing grade for every course (sittingId left null — these are recorded results)
+                // mid-term mirrors the lectures-service seed (70 + sid*5 + courseIndex); final is varied.
+                double midterm = 70 + sid * 5 + ci;
+                double finalScore = 72 + ci * 3;
+                String grade = StudyRecordService.gradeFor((midterm + finalScore) / 2.0);
                 resultRepository.save(new ExamResult(st.getId(), courseId, null,
-                        grades[si][ci], credits[ci], LocalDate.of(2026, 1, 20 + ci)));
+                        midterm, finalScore, grade, credits[ci], LocalDate.of(2026, 1, 20 + ci)));
             }
         }
 

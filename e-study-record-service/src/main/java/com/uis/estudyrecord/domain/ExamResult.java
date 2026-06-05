@@ -12,20 +12,30 @@ public class ExamResult {
     private Long studentId;
     private Long courseId;
     private Long sittingId;
-    private String grade;
+    private double midtermScore;   // fetched from lectures-service (My Lectures Sheet, 8083)
+    private double finalScore;     // entered by the teacher here
+    private String grade;          // COMPUTED letter (A-F) from the overall score
     private int credits;
     private LocalDate date;
 
     public ExamResult() {
     }
 
-    public ExamResult(Long studentId, Long courseId, Long sittingId, String grade, int credits, LocalDate date) {
+    public ExamResult(Long studentId, Long courseId, Long sittingId,
+                      double midtermScore, double finalScore, String grade, int credits, LocalDate date) {
         this.studentId = studentId;
         this.courseId = courseId;
         this.sittingId = sittingId;
+        this.midtermScore = midtermScore;
+        this.finalScore = finalScore;
         this.grade = grade;
         this.credits = credits;
         this.date = date;
+    }
+
+    /** Overall score = average of mid-term (from lectures) and final exam. */
+    public double overall() {
+        return (midtermScore + finalScore) / 2.0;
     }
 
     public Long getId() { return id; }
@@ -36,6 +46,10 @@ public class ExamResult {
     public void setCourseId(Long courseId) { this.courseId = courseId; }
     public Long getSittingId() { return sittingId; }
     public void setSittingId(Long sittingId) { this.sittingId = sittingId; }
+    public double getMidtermScore() { return midtermScore; }
+    public void setMidtermScore(double midtermScore) { this.midtermScore = midtermScore; }
+    public double getFinalScore() { return finalScore; }
+    public void setFinalScore(double finalScore) { this.finalScore = finalScore; }
     public String getGrade() { return grade; }
     public void setGrade(String grade) { this.grade = grade; }
     public int getCredits() { return credits; }
