@@ -46,17 +46,22 @@ public class DataSeeder implements CommandLineRunner {
         Student[] students = {s1, s2, s3};
         // course id -> credits (matches the lectures-service catalogue)
         int[] credits = {5, 6, 6, 6, 5};
+        // Seeded overall scores [student][course] (mid-term + final, out of 100).
+        int[][] overall = {
+                {94, 100, 91, 98, 96},
+                {82, 78, 85, 80, 76},
+                {74, 68, 72, 70, 66},
+        };
 
         for (int si = 0; si < students.length; si++) {
             Student st = students[si];
-            long sid = st.getId();
             for (long courseId = 1; courseId <= 5; courseId++) {
                 int ci = (int) (courseId - 1);
                 enrollmentRepository.save(new Enrollment(st.getId(), courseId, 1L, "ACTIVE"));
-                // mid-term = half of the lectures test (70 + sid*5 + ci, out of 100) -> out of 50.
-                double midterm = (70 + sid * 5 + ci) / 2.0;
-                double finalScore = 35 + ci * 2;   // out of 50, varied per course
-                String grade = StudyRecordService.gradeFor(midterm + finalScore);
+                double o = overall[si][ci];
+                double midterm = o / 2.0;          // mid-term component (out of 50)
+                double finalScore = o / 2.0;       // final component (out of 50)
+                String grade = StudyRecordService.gradeFor(o);
                 resultRepository.save(new ExamResult(st.getId(), courseId, null,
                         midterm, finalScore, grade, credits[ci], LocalDate.of(2026, 1, 20 + ci)));
             }
