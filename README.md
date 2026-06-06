@@ -52,7 +52,8 @@ Each service seeds consistent demo data on first start:
   Software and Services Deployment, Text Mining.
 - Students: Kutay Tanriverdi (#1), Myat Noe Khin (#2), Muhammad Umer Ijaz (#3) — **all enrolled
   in all 5 courses and passing each with a grade**.
-- One open exam sitting per course + course timetable, assessment sheet, materials, etc.
+- One open exam sitting per course + course timetable, weekly attendance (12 weeks), mid-term
+  test results, materials, etc.
 
 Then open the three UIs in a browser:
 - **http://localhost:8081/** — Register for Examination
@@ -76,10 +77,14 @@ Then open the three UIs in a browser:
 
 ### 8082 — E-Study Record
 - **Teacher Mode:** pick a student (by name) and a **class** (list fetched from lectures-service),
-  **enter / update an exam result** (grade A–F). **Credits are fixed per course** (fetched from
-  lectures, not editable); there is **no attempt field** — the exam sitting *is* the attempt.
-- **Student Mode:** study **overview** (total credits, exams taken) and **exam history** — each
-  grade shows the **real class name + fixed credits** (resolved from lectures-service).
+  enter only the **final exam score**. The **mid-term is pulled live from lectures-service (8083)**,
+  and the **overall A–F grade is computed** = mid-term + final (out of 100). **Credits are fixed
+  per course** (fetched from lectures, not editable); there is **no attempt field** — the exam
+  sitting *is* the attempt.
+- **Student Mode:** study **overview** (total credits, exams taken) and **exam history** — each row
+  shows **Mid-term (from 8083) · Final · Overall · Grade · Credits**, with the real class name.
+- *This is the visible cross-service link: the grade in E-Study Record depends on the mid-term
+  held by My Lectures Sheet — change the mid-term in 8083 and the grade here changes.*
 
 ### 8083 — My Lectures Sheet
 - **Student Mode:** one table per the real UIS sheet — each course row shows its **schedule (When)**
@@ -93,7 +98,7 @@ Then open the three UIs in a browser:
 
 ## 5. Inter-service communication (Spring `RestTemplate`, responses end with a DTO)
 Every service both **calls** and **is called** — names and credits are resolved from their owning
-service (single source of truth), never hardcoded in a UI. Five inter-service calls:
+service (single source of truth), never hardcoded in a UI. Inter-service calls:
 
 | Caller → Callee | Endpoint | Why | Response DTO |
 |-----------------|----------|-----|--------------|
@@ -102,6 +107,7 @@ service (single source of truth), never hardcoded in a UI. Five inter-service ca
 | lectures → exam-registration | `GET /api/sittings` | a course's exam sittings | `List<ExamSittingDTO>` |
 | lectures → e-study-record | `GET /api/students` | student list (names) | `List<StudentDTO>` |
 | e-study-record → lectures | `GET /api/courses` | course **names + fixed credits** on grades | `List<CourseDTO>` |
+| e-study-record → lectures | `GET /api/test-results` | **mid-term score → drives the overall A–F grade** | `List<TestResultDTO>` |
 
 All calls use Spring **`RestTemplate`** (`config/RestTemplateConfig` + a class in `client/`) and
 deserialize the response into a **DTO**.
@@ -162,8 +168,8 @@ services). Open Bruno → *Open Collection* → select that folder → Send any 
 | GET | /api/enrollments?studentId= , /api/enrollments/exists?studentId=&courseId= |
 | POST | /api/enrollments |
 | GET | /api/results?studentId= |
-| POST | /api/results  *(enter grade; credits taken from the course)* |
-| PUT | /api/results/{id}?grade=  *(update grade only — credits fixed, no attempt)* |
+| POST | /api/results  *(enter final score; mid-term pulled from lectures, grade computed, credits from course)* |
+| PUT | /api/results/{id}?finalScore=  *(update final score; mid-term re-fetched, grade recomputed)* |
 
 ### lectures (8083)
 | Method | Path |
