@@ -110,12 +110,6 @@ public class StudyRecordService {
         return "F";
     }
 
-    /**
-     * Teacher: enter a new exam result. The teacher provides only the FINAL exam score;
-     * the MID-TERM is fetched from lectures-service (8083), the overall grade (A-F) is
-     * computed from both, and credits come from the course. This makes the overall grade
-     * in E-Study Record depend directly on the mid-term held by My Lectures Sheet.
-     */
     /** Mid-term contributes 50% — the lectures test score (0-100) is taken as out of 50. */
     private double midtermComponent(Long studentId, Long courseId) {
         return Math.min(lecturesClient.midtermScore(studentId, courseId), 100.0) / 2.0;
@@ -126,6 +120,12 @@ public class StudyRecordService {
         return Math.max(0.0, Math.min(f, 50.0));
     }
 
+    /**
+     * Teacher: enter a new exam result. The teacher provides only the FINAL exam score;
+     * the MID-TERM is fetched from lectures-service (8083), the overall grade (A-F) is
+     * computed from both, and credits come from the course. This makes the overall grade
+     * in E-Study Record depend directly on the mid-term held by My Lectures Sheet.
+     */
     public ExamResult addResult(ResultRequest req) {
         double midterm = midtermComponent(req.getStudentId(), req.getCourseId());
         double finalScore = finalComponent(req.getFinalScore());

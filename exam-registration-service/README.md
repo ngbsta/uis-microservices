@@ -1,7 +1,7 @@
 # exam-registration-service (Kutay)
 
 Spring Boot microservice for the **Register for Examination** module. Port **8081**.
-See `../UIS-MICROSERVICES-README.md` for the full 3-service setup.
+See `../README.md` for the full 3-service setup.
 
 ## Owns
 `exam_sitting`, `exam_registration` (+ `RegStatus` enum). Student/Course/Teacher live in
@@ -9,7 +9,8 @@ other services and are referenced by id.
 
 ## Layers
 `controller → service (interface + Impl) → repository (JpaRepository + DatabaseConn singleton)`,
-DTOs via **ModelMapper**, inter-service call via `client/EnrollmentClient` (RestClient).
+DTOs via **ModelMapper**, inter-service calls via `client/EnrollmentClient` (enrolment check)
+and `client/LecturesClient` (course names) using Spring **RestTemplate**.
 
 ## Endpoints
 | Method | Path | Description |
