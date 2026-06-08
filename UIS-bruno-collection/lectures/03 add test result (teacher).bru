@@ -1,0 +1,26 @@
+meta {
+  name: 03 add test result (teacher)
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8083/api/test-results
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "courseId": 1,
+    "studentId": 2,
+    "score": 78,
+    "activityPoint": 8,
+    "released": true
+  }
+}
+
+docs {
+  Teacher adds a mid-term test result (score + activity point) for a student in a course.
+  This mid-term score is what e-study-record (8082) fetches to compute the overall A-F grade.
+}

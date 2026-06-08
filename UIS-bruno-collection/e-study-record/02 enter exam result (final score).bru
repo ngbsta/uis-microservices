@@ -1,0 +1,26 @@
+meta {
+  name: 02 enter exam result (final score)
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8082/api/results
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "studentId": 2,
+    "courseId": 2,
+    "sittingId": 1,
+    "finalScore": 45,
+    "date": "2026-06-08"
+  }
+}
+
+docs {
+  Teacher enters only the FINAL score. The mid-term is fetched live from lectures-service (8083),
+  the overall A-F grade is computed (mid-term + final), and credits come from the course.
+}

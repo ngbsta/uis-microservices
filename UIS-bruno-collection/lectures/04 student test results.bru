@@ -1,0 +1,20 @@
+meta {
+  name: 04 student test results
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://localhost:8083/api/test-results?studentId=1
+  body: none
+  auth: none
+}
+
+params:query {
+  studentId: 1
+}
+
+docs {
+  Student's mid-term test results (enriched with courseName + studentName + activityPoint).
+  Optional &courseId= to filter to one course.
+}

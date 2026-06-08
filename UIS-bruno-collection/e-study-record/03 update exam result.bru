@@ -5,13 +5,16 @@ meta {
 }
 
 put {
-  url: http://localhost:8082/api/results/1?grade=C&attempt=2&credits=0
+  url: http://localhost:8082/api/results/1?finalScore=30
   body: none
   auth: none
 }
 
 params:query {
-  grade: C
-  attempt: 2
-  credits: 0
+  finalScore: 30
+}
+
+docs {
+  Update an existing result with a new FINAL score. Mid-term is re-fetched from lectures
+  and the grade is recomputed automatically.
 }
