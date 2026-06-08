@@ -1,7 +1,6 @@
 package com.uis.estudyrecord.controller;
 
 import com.uis.estudyrecord.domain.Enrollment;
-import com.uis.estudyrecord.domain.ExamResult;
 import com.uis.estudyrecord.domain.Student;
 import com.uis.estudyrecord.dto.CourseDTO;
 import com.uis.estudyrecord.dto.EnrollmentStatusDTO;
@@ -81,16 +80,16 @@ public class StudyRecordController {
         return service.getResults(studentId);
     }
 
-    // Teacher: enter exam result (final score only; mid-term + grade computed)
+    // Teacher: enter exam result (final score only; mid-term + grade computed). Ends with a DTO.
     @PostMapping("/results")
-    public ResponseEntity<ExamResult> addResult(@RequestBody ResultRequest request) {
+    public ResponseEntity<ExamResultDTO> addResult(@RequestBody ResultRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.addResult(request));
     }
 
-    // Teacher: update the FINAL exam score. Mid-term re-fetched from lectures, grade recomputed.
+    // Teacher: update the FINAL exam score. Mid-term re-fetched from lectures, grade recomputed. Ends with a DTO.
     @PutMapping("/results/{id}")
-    public ExamResult updateResult(@PathVariable Long id,
-                                   @RequestParam double finalScore) {
+    public ExamResultDTO updateResult(@PathVariable Long id,
+                                      @RequestParam double finalScore) {
         return service.updateResult(id, finalScore);
     }
 }

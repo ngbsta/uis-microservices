@@ -126,7 +126,7 @@ public class StudyRecordService {
      * computed from both, and credits come from the course. This makes the overall grade
      * in E-Study Record depend directly on the mid-term held by My Lectures Sheet.
      */
-    public ExamResult addResult(ResultRequest req) {
+    public ExamResultDTO addResult(ResultRequest req) {
         double midterm = midtermComponent(req.getStudentId(), req.getCourseId());
         double finalScore = finalComponent(req.getFinalScore());
         ExamResult r = new ExamResult(
@@ -134,11 +134,11 @@ public class StudyRecordService {
                 midterm, finalScore, gradeFor(midterm + finalScore),
                 creditsForCourse(req.getCourseId()),
                 req.getDate() != null ? req.getDate() : java.time.LocalDate.now());
-        return resultRepository.save(r);
+        return toDtos(List.of(resultRepository.save(r))).get(0);
     }
 
     /** Teacher: update an exam result (new FINAL score). Mid-term re-fetched, grade recomputed. */
-    public ExamResult updateResult(Long id, double finalScore) {
+    public ExamResultDTO updateResult(Long id, double finalScore) {
         ExamResult r = resultRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Result not found: " + id));
         double midterm = midtermComponent(r.getStudentId(), r.getCourseId());
@@ -147,7 +147,7 @@ public class StudyRecordService {
         r.setFinalScore(fin);
         r.setGrade(gradeFor(midterm + fin));
         r.setCredits(creditsForCourse(r.getCourseId()));
-        return resultRepository.save(r);
+        return toDtos(List.of(resultRepository.save(r))).get(0);
     }
 
     /** Student: track credits obtained (sum over results). */
