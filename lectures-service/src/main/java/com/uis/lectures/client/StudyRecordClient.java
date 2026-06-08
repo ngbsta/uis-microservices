@@ -29,6 +29,7 @@ public class StudyRecordClient {
 
     public List<StudentDTO> getStudents() {
         try {
+            // >>> INTER-SERVICE REST CALL: GET 8082 /api/students -> List<StudentDTO>
             List<StudentDTO> students = restTemplate.exchange(
                     baseUrl + "/api/students",
                     HttpMethod.GET,

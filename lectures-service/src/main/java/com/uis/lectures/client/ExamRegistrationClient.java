@@ -31,6 +31,7 @@ public class ExamRegistrationClient {
 
     /** Fetch all sittings from exam-registration and keep only the given course's. */
     public List<ExamSittingDTO> getSittingsForCourse(Long courseId) {
+        // >>> INTER-SERVICE REST CALL: GET 8081 /api/sittings -> List<ExamSittingDTO>
         List<ExamSittingDTO> all = restTemplate.exchange(
                 baseUrl + "/api/sittings",
                 HttpMethod.GET,

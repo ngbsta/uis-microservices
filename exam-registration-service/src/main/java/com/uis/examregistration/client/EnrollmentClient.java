@@ -32,6 +32,7 @@ public class EnrollmentClient {
                 .queryParam("courseId", courseId)
                 .toUriString();
 
+        // >>> INTER-SERVICE REST CALL: GET 8082 /api/enrollments/exists -> parsed into EnrollmentStatusDTO
         EnrollmentStatusDTO response = restTemplate.getForObject(url, EnrollmentStatusDTO.class);
         return response != null && response.isEnrolled();
     }

@@ -33,6 +33,7 @@ public class LecturesClient {
     public Map<Long, String> courseNames() {
         Map<Long, String> map = new LinkedHashMap<>();
         try {
+            // >>> INTER-SERVICE REST CALL: GET 8083 /api/courses -> List<CourseDTO>
             List<CourseDTO> courses = restTemplate.exchange(
                     baseUrl + "/api/courses",
                     HttpMethod.GET,

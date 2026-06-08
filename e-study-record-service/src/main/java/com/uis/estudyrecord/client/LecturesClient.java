@@ -31,6 +31,7 @@ public class LecturesClient {
 
     public List<CourseDTO> getCourses() {
         try {
+            // >>> INTER-SERVICE REST CALL: GET 8083 /api/courses -> List<CourseDTO> (names + fixed credits)
             List<CourseDTO> courses = restTemplate.exchange(
                     baseUrl + "/api/courses",
                     HttpMethod.GET,
@@ -69,6 +70,7 @@ public class LecturesClient {
      */
     public double midtermScore(Long studentId, Long courseId) {
         try {
+            // >>> INTER-SERVICE REST CALL: GET 8083 /api/test-results -> mid-term score that drives the A-F grade
             List<Map<String, Object>> results = restTemplate.exchange(
                     baseUrl + "/api/test-results?studentId=" + studentId + "&courseId=" + courseId,
                     HttpMethod.GET, null,
