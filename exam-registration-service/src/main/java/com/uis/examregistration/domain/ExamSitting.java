@@ -40,24 +40,30 @@ public class ExamSitting {
         this.teacherId = teacherId;
     }
 
-    // --- business logic (mirrors the class & sequence diagrams) ---
+    // --- business logic (mirrors the class & sequence diagrams; used by register()) ---
+
+    /** Still room left? true while registered count is below the capacity limit. */
     public boolean hasFreeCapacity() {
         return registeredCount < capacity;
     }
 
+    /** Is now within the registration window [registerFrom, registerUntil]? */
     public boolean isRegistrationOpen() {
         LocalDateTime now = LocalDateTime.now();
         return !now.isBefore(registerFrom) && !now.isAfter(registerUntil);
     }
 
+    /** Can a student still cancel? true until the unregister deadline passes. */
     public boolean isUnregisterOpen() {
         return !LocalDateTime.now().isAfter(unregisterUntil);
     }
 
+    /** +1 seat taken — called after a successful registration. */
     public void incrementCount() {
         this.registeredCount++;
     }
 
+    /** -1 seat — called on unregister, freeing a place (never goes below 0). */
     public void decrementCount() {
         if (this.registeredCount > 0) {
             this.registeredCount--;
