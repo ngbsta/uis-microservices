@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 /**
  * DTO for an exam sitting fetched from exam-registration-service.
- * The inter-service RestTemplate call deserializes into this DTO, and the
- * lectures REST endpoint returns it (the call "ends with a DTO").
+ * The inter-service RestTemplate call deserializes the JSON response into this DTO.
+ * Services exchange DTOs (not raw JPA entities) so their internal models stay decoupled.
  */
 public class ExamSittingDTO {
     private Long id;

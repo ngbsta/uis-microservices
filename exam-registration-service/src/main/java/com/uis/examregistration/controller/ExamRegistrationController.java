@@ -10,6 +10,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST API for exam registrations (port 8081). A registration is only accepted if the
+ * student is enrolled in the course — checked live against e-study-record (8082).
+ * Unregistering frees a seat and alerts anyone monitoring that sitting. Responses are DTOs.
+ */
 @RestController
 @RequestMapping("/api/registrations")
 public class ExamRegistrationController {

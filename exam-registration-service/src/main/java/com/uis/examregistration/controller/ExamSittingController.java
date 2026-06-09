@@ -9,6 +9,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST API for exam sittings (Register for Examination, port 8081).
+ * Students read sittings; teachers create/edit/delete them. All responses are DTOs.
+ */
 @RestController
 @RequestMapping("/api/sittings")
 public class ExamSittingController {
@@ -19,11 +23,13 @@ public class ExamSittingController {
         this.sittingService = sittingService;
     }
 
+    // List all sittings (each carries its course name, fetched from lectures-service)
     @GetMapping
     public List<SittingDTO> getAll() {
         return sittingService.getAll();
     }
 
+    // One sitting by id
     @GetMapping("/{id}")
     public SittingDTO getById(@PathVariable Long id) {
         return sittingService.getById(id);

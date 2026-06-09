@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST API of the E-Study Record service (port 8082): students, enrolments and exam
+ * results/grades. Course names and credits, and the mid-term used to compute the grade,
+ * are fetched from lectures-service (8083). Every endpoint returns a DTO, not a JPA entity.
+ */
 @RestController
 @RequestMapping("/api")
 public class StudyRecordController {
@@ -64,7 +69,7 @@ public class StudyRecordController {
         return service.getEnrollments(studentId);
     }
 
-    // Called by exam-registration-service (inter-service communication). Ends with a DTO.
+    // Called by exam-registration-service before a registration (inter-service). Returns EnrollmentStatusDTO.
     @GetMapping("/enrollments/exists")
     public EnrollmentStatusDTO isEnrolled(@RequestParam Long studentId, @RequestParam Long courseId) {
         return new EnrollmentStatusDTO(studentId, courseId, service.isEnrolled(studentId, courseId));
@@ -80,13 +85,13 @@ public class StudyRecordController {
         return service.getResults(studentId);
     }
 
-    // Teacher: enter exam result (final score only; mid-term + grade computed). Ends with a DTO.
+    // Teacher: enter exam result (final score only; mid-term pulled from 8083, grade computed). Returns the saved result as a DTO.
     @PostMapping("/results")
     public ResponseEntity<ExamResultDTO> addResult(@RequestBody ResultRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.addResult(request));
     }
 
-    // Teacher: update the FINAL exam score. Mid-term re-fetched from lectures, grade recomputed. Ends with a DTO.
+    // Teacher: update the FINAL exam score. Mid-term re-fetched from lectures, grade recomputed. Returns the updated result as a DTO.
     @PutMapping("/results/{id}")
     public ExamResultDTO updateResult(@PathVariable Long id,
                                       @RequestParam double finalScore) {

@@ -11,6 +11,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST API of the My Lectures Sheet service (port 8083): courses, weekly timetable,
+ * attendance (weeks 1-12), mid-term test results (score + activity point), course
+ * materials and a per-course e-mail-notification toggle. Pulls a course's exam sittings
+ * from exam-registration (8081) and the student list from e-study-record (8082).
+ */
 @RestController
 @RequestMapping("/api")
 public class LecturesController {

@@ -1,9 +1,9 @@
 package com.uis.estudyrecord.dto;
 
 /**
- * Returned by GET /api/enrollments/exists. The inter-service call from
- * exam-registration-service deserializes the response into this DTO
- * (so the communication "ends with a DTO" on both sides).
+ * Returned by GET /api/enrollments/exists. exam-registration-service calls this
+ * endpoint before allowing a registration and deserializes the JSON response into
+ * this DTO. Inter-service data is always carried as a DTO, never a raw JPA entity.
  */
 public class EnrollmentStatusDTO {
     private Long studentId;
