@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RegistrationException.class)
     public ResponseEntity<Map<String, Object>> handleRegistration(RegistrationException ex) {
-        return build(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        return build(HttpStatus.valueOf(422), ex.getMessage());   // 422 Unprocessable (registration prerequisite failed)
     }
 
     private ResponseEntity<Map<String, Object>> build(HttpStatus status, String message) {
